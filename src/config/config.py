@@ -1,5 +1,3 @@
-from temp import VAR2
-
-VAR1 = 42
+from src.temp import VAR2
 
 print(VAR2)

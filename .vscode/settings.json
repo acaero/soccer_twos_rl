@@ -1,10 +1,6 @@
 {
   // Other settings...
   "python.defaultInterpreterPath": ".venv\\Scripts\\python.exe", // Set your virtual environment's python path if needed
-  "python.envFile": "${workspaceFolder}/.venv", // Optional: Use .venv file for environment variables
-  "terminal.integrated.env.windows": {
-    "PYTHONPATH": "${workspaceFolder}/src" // Add the src folder to the PYTHONPATH, so you can import modules from there
-  },
   "files.exclude": {
     // Hide these files and folders from the explorer
     "**/__pycache__": true, // Contains compiled bytecode files (for faster execution)
