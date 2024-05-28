@@ -8,7 +8,6 @@ team0_reward = 0
 team1_reward = 0
 
 
-
 i = 0
 while True:
     i+=1

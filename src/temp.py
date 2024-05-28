@@ -1,4 +1,5 @@
-from config.config import VAR1
+# from config.config import VAR1
 
+VAR2= 11
 
-print(VAR1)
+# print(VAR1)
