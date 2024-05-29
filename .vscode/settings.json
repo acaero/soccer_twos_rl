@@ -5,5 +5,24 @@
     // Hide these files and folders from the explorer
     "**/__pycache__": true, // Contains compiled bytecode files (for faster execution)
     "**/*.egg-info": true // Contains metadata about installed packages
-  }
+  },
+
+  // Activates venv automatically in cmd for windows
+  "terminal.integrated.profiles.windows": {
+    "Command Prompt": {
+      "path": ["${env:windir}\\Sysnative\\cmd.exe", "${env:windir}\\System32\\cmd.exe"],
+      "args": ["/k", "${workspaceFolder}\\.venv\\Scripts\\activate"]
+    }
+  },
+  // sets cmd as default terminal for windows
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+
+  // Für Eric
+  "terminal.integrated.profiles.osx": {
+    "bash": {
+      "path": "/bin/bash",
+      "args": ["-c", "source ${workspaceFolder}/.venv/bin/activate; exec bash"]
+    }
+  },
+  "terminal.integrated.defaultProfile.osx": "bash"
 }
