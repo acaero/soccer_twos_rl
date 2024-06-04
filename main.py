@@ -1,6 +1,6 @@
 import soccer_twos
 import numpy as np
-
+import time 
 env = soccer_twos.make(
     render=True,
     time_scale=1,
@@ -53,16 +53,18 @@ i = 0
 while True:
     i += 1
 
+    action = {
+            0: [1, 0, 0], # Blau hinten -> [1, 0, 0]: vorwärts -> [2, 0, 0]: rückwärts
+            1: [1, 0, 0], # Blau vorne -> [0, 2, 0]: links -> [0, 1, 0]: rechts
+            2: [1, 0, 0],# Orange hinten -> [0, 0, 1]: links -> [0, 0, 2]: rechts
+            3: [1, 0, 0],# Orange vorne
+    }
+
     obs, reward, done, info = env.step(action)
 
     # print("Observation von Spieler 1 nach step 1: ", obs[0])
 
-    action = {
-        0: movement_to_ball(info[0]),
-        1: movement_to_ball(info[1]),
-        2: movement_to_ball(info[2]),
-        3: movement_to_ball(info[3]),
-    }
+
 
     print("Action von Spieler 1 bei init: ",
           action[0], " \n #0 [-1,1] Vorwärts/Rückwärts \n #1 [-1,1] Links/Rechts \n #2 [-1,1] Drehung")
@@ -81,4 +83,5 @@ while True:
         print("Total Reward: ", team0_reward, " x ", team1_reward)
         team0_reward = 0
         team1_reward = 0
+        time.sleep(5)
         env.reset()

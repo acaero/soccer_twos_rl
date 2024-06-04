@@ -25,3 +25,23 @@ Robotiksimulator...)
 - Schriftliche Ausarbeitung (5-10 Seiten) (Einführung -> Methoden -> Anwendung -> Abschluss)
 - Abschlusspräsentation (20 Minuten, 8 Folien, jeder soll Vortragen)
 
+## Insights
+
+- Die Aktionsraum eines jeden Spielers ist in drei Dimensionen aufgeteilt `[<Vorgehen-Zurückgehen>, <Rechtsgehen-Linksgehen>, <Linksdrehen-Rechtsdrehen>]`
+- Dabei muss jeder Wert eine Ganzzahl im Bereich `[1, 2]` sein. 
+Wobei `1` das erste Element des jeweiligen Wertes bezeichnet und `2` das zweite. E.g. 
+
+- `[1, 0, 0]` -> geht nur Vorwärts, 
+
+- `[1, 2, 0]` -> geht Vorwärts und nach Links. und 
+
+- `[2, 2, 2]` -> geht Rückwärts, nach Links und dreht sich Rechts.
+
+- Die Aktionen werden dabei während eines Runs immer für alle Spieler zeitgleich definiert, das übergeben dictionary sieht dabei wie folgt aus:
+
+- `action={
+    0: [0, 0, 0], # Blau hinten 
+    1: [0, 0, 0], # Blau vorne
+    2: [0, 0, 0],# Orange hinten
+    3: [0, 0, 0],# Orange vorne
+}`
