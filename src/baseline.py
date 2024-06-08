@@ -1,6 +1,4 @@
-import soccer_twos
 import numpy as np
-import time
 import math
 
 class SoccerAgent:
@@ -29,6 +27,19 @@ class SoccerAgent:
         cross_product = x1 * y2 - y1 * x2
         return "left" if cross_product > 0 else "right"
 
+    def calculate_multiplier(self, ball_x, x_goal):
+        start_x = 1
+        if ball_x == start_x:
+            return 1  # To avoid division by zero if the ball is exactly at start_x
+        # Calculate the absolute distances from the start position and the goal
+        distance_to_start = abs(ball_x - start_x)
+        distance_to_goal = abs(x_goal - start_x)
+        # Calculate the multiplier
+        multiplier = 1 - (distance_to_start / distance_to_goal)
+        # Ensure the multiplier is within the range [0, 1]
+        multiplier = max(0, min(1, multiplier))
+        return multiplier
+
     def move_to_point(self, player_info, target_pos):
         player_pos = np.array(player_info["position"][:2])
         direction_to_target = target_pos - player_pos
@@ -52,77 +63,33 @@ class SoccerAgent:
             turn = 1 if rotation_direction == "left" else 2
 
         return [forward, 0, turn]
-
-def calculate_multiplier(ball_x, x_goal):
-    start_x = 1
-    if ball_x == start_x:
-        return 1  # To avoid division by zero if the ball is exactly at start_x
-    # Calculate the absolute distances from the start position and the goal
-    distance_to_start = abs(ball_x - start_x)
-    distance_to_goal = abs(x_goal - start_x)
-    # Calculate the multiplier
-    multiplier = 1 - (distance_to_start / distance_to_goal)
-    # Ensure the multiplier is within the range [0, 1]
-    multiplier = max(0, min(1, multiplier))
-    return multiplier
-
-# Create an instance of the SoccerAgent class
-agent = SoccerAgent()
-
-env = soccer_twos.make(
-    render=True,
-    time_scale=1,
-    quality_level=5,
-)
-
-team0_reward = 0
-team1_reward = 0
-
-actions = {
-        0: [0, 0, 0],
-        1: [0, 0, 0],
-        2: [0, 0, 0],
-        3: [0, 0, 0],
-    }
-i = 0
-while True:
-    i += 1
-    obs, reward, done, info = env.step(actions)
-
-    # initializes all agents with ball as the target
-    target_positions = {player_id: np.array(info[0]["ball_info"]["position"]) for player_id in range(4)}
-
-    blue_goal = np.array([-15.34, 1.82])
-    orange_goal = np.array([15.34, 1.82])
     
-    actions = {}
-    for player_id in range(4):
-        player_info = info[player_id]["player_info"]
-
+    def defend_and_attack(self, ball_position, player_id, player_position):
+        
+        blue_goal = np.array([-15.34, 1.82])
+        orange_goal = np.array([15.34, 1.82])
+        
+        target_pos = [0, 0]
+        drift = 0.4
         # Falls der Ball auf der eigenen Seite ist soll verteidigt werden,
         # indem man sich zwischen Ball und Tor positioniert
         # Sonst soll der Spieler sich zum Ball bewegen
-        ball_position = info[player_id]["ball_info"]["position"]
-        if ball_position[0] > 1 and player_id in [2, 3]:
-            target_positions[player_id] = orange_goal + (ball_position - orange_goal) * calculate_multiplier(ball_position[0], orange_goal[0])
-        elif ball_position[0] < 1 and player_id in [0, 1]:
-            target_positions[player_id] = blue_goal + (ball_position - blue_goal) * calculate_multiplier(ball_position[0], blue_goal[0])
-        else:
-            target_positions[player_id] = np.array(info[0]["ball_info"]["position"])
+        if player_id in [0, 1]: # blue team
+            if ball_position[0] < 1:
+                target_pos = blue_goal + (ball_position - blue_goal) * self.calculate_multiplier(ball_position[0], blue_goal[0])
+            elif ball_position[0] < player_position[0] and ball_position[0] > 1:
+                random_value = np.random.uniform(-1 - drift, 1 + drift)
+                target_pos = np.array(ball_position) * np.array([1, random_value])
+            else:
+                target_pos = np.array(ball_position) 
+        elif player_id in [2, 3]: # orange team
+            if ball_position[0] > 1:
+                target_pos = orange_goal + (ball_position - orange_goal) * self.calculate_multiplier(ball_position[0], orange_goal[0])
+            elif ball_position[0] > player_position[0] and ball_position[0] < 1:
+                random_value = np.random.uniform(-1 - drift, 1 + drift)
+                target_pos = np.array(ball_position) * np.array([1, random_value])        
+            else:
+                target_pos = np.array(ball_position) 
 
-        target_pos = target_positions[player_id]
-        actions[player_id] = agent.move_to_point(player_info, target_pos)
+        return target_pos
 
-    obs, reward, done, info = env.step(actions)
-
-    print("Rotation von Spieler 1: ", info[0]["player_info"]['rotation_y'],
-          "Position von Spieler 1: ", info[0]["player_info"]["position"],
-          "Target Position: ", target_positions[0])
-
-    team0_reward += reward[0] + reward[1]
-    team1_reward += reward[2] + reward[3]
-    if done["__all__"]:
-        print("Total Reward: ", team0_reward, " and ", team1_reward)
-        team0_reward = 0
-        team1_reward = 0
-        env.reset()
