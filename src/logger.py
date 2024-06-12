@@ -2,6 +2,7 @@ import logging
 import logging.handlers
 import json
 from datetime import datetime, timezone
+import os
 
 class CustomLogger():
     def __init__(self) -> None:
@@ -9,9 +10,13 @@ class CustomLogger():
         self._logger = logging.getLogger()
         self._logger.setLevel(logging.DEBUG)
 
+        # Create the logs directory if it doesn't exist
+        logs_dir = 'src/logs'
+        os.makedirs(logs_dir, exist_ok=True)
+        
         # Create a file handler that logs even debug messages
         file_handler = logging.handlers.RotatingFileHandler(
-            'src/logs/logs.json', maxBytes=5*1024*1024, backupCount=5
+            os.path.join(logs_dir, 'logs.json'), maxBytes=5*1024*1024, backupCount=5
         )
 
         # Create and set the custom JSON formatter
@@ -35,10 +40,6 @@ class JSONFormatter(logging.Formatter):
             'timestamp': datetime.now(timezone.utc).isoformat(),  # Corrected line
             'level': record.levelname,
             'message': record.getMessage(),
-            'logger': record.name,
-            'filename': record.pathname,
-            'function': record.funcName,
-            'line': record.lineno,
         }
         
         # Add custom fields if they exist

@@ -10,4 +10,3 @@ soccer-twos==0.1.14
 numpy==1.19.5
 protobuf==3.20
 requests==2.31.0
-

@@ -71,9 +71,9 @@ class SoccerAgent:
         
         target_pos = [0, 0]
         drift = 0.4
-        # Falls der Ball auf der eigenen Seite ist soll verteidigt werden,
-        # indem man sich zwischen Ball und Tor positioniert
+        # Falls der Ball auf der eigenen Seite ist positioniert sich der Spieler zwischen Ball und Tor
         # Sonst soll der Spieler sich zum Ball bewegen
+        # Falls der Ball hinter dem Spieler im Angriff ist, soll der Spieler erst vorbei und dann zum Ball
         if player_id in [0, 1]: # blue team
             if ball_position[0] < 1:
                 target_pos = blue_goal + (ball_position - blue_goal) * self.calculate_multiplier(ball_position[0], blue_goal[0])
