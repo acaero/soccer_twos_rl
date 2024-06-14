@@ -1,72 +1,57 @@
+import numpy as np
+from src.utils import plotLearning, adjust_rewards
 import soccer_twos
-from src.reinforcement_agent import ReinforcementLearningAgent
+from src.DQN import DQNAgent
 from src.logger import CustomLogger
 
+if __name__ == "__main__":
 
-# Create a logger
-logger = CustomLogger().logger 
+    env = soccer_twos.make()
+    logger = CustomLogger().logger 
+    n_games = 10000
+    
+    scores, eps_history = [], []    
+    agents = [DQNAgent(336, 3) for _ in range(4)]
 
+    for i in range(n_games):
+        agent_scores = [0, 0, 0, 0]
+        done = False
+        obs = env.reset()
+        while not done:
+            actions = {}
+            for player_id in range(4):
+                state = obs[player_id]
+                action = agents[player_id].act(state)
+                actions[player_id] = action  # Use discrete actions
+            next_obs, reward, done, info = env.step(actions)
+            reward = adjust_rewards(reward, info)
+            # Store experiences and train agents
+            losses = []
+            for player_id in range(4):
+                next_state = next_obs[player_id]
+                agents[player_id].remember(
+                    obs[player_id], 
+                    actions[player_id], 
+                    reward[player_id], 
+                    next_state, 
+                    done[player_id] if player_id in done else done['__all__']
+                )
+                loss = agents[player_id].replay()
+                if loss is not None:
+                    losses.append(loss)
 
-# Initialize first action and environment
-env = soccer_twos.make(
-    render=False,
-    time_scale=1,
-    quality_level=5,
-)
+                agent_scores[player_id] += reward[player_id]
 
-actions = {
-        0: [0, 0, 0],
-        1: [0, 0, 0],
-        2: [0, 0, 0],
-        3: [0, 0, 0],
-    }
+            scores.append(agent_scores)
+            eps_history.append([agent.epsilon for agent in agents])
+            obs = next_obs
 
-obs, reward, done, info = env.step(actions)
-
-# Assuming state_size and action_size are defined according to your observation and action space
-state_size = len(obs[0])  # Adjust based on actual observation space size
-action_size = 3  # There are 3 discrete actions: 0, 1, and 2
-
-# Create four RL agents
-agents = [ReinforcementLearningAgent(state_size, action_size) for _ in range(4)]
-
-# Reward per team
-team_blue_reward = 0
-team_orange_reward = 0
-
-# Main loop 
-i = 0
-while True:
-    i += 1
-
-    actions = {}
-    for player_id in range(4):
-        state = obs[player_id]
-        action = agents[player_id].act(state)
-        actions[player_id] = action  # Use discrete actions
-
-    next_obs, reward, done, info = env.step(actions)
-
-    # Debugging: Print the structure of `done`
-    print(f"Done: {done}")
-
-    # Store experiences and train agents
-    for player_id in range(4):
-        next_state = next_obs[player_id]
-        agents[player_id].remember(
-            obs[player_id], 
-            actions[player_id], 
-            reward[player_id], 
-            next_state, 
-            done[player_id] if player_id in done else done['__all__']  # Adjust this line based on the printed structure
-        )
-        agents[player_id].replay()
-
-    obs = next_obs
-
-    # Calculate the total reward for each team and reset if the game is over
-    team_blue_reward += reward[0] + reward[1]
-    team_orange_reward += reward[2] + reward[3]
+            avg_score = np.mean([score[0] for score in scores[-100:]], axis=0)
+            print("episode:", i, "scores:", agent_scores, "average score %.3f" % avg_score, "epsilon %.3f" % eps_history[-1][0])
+        
+    x = [i + 1 for i in range(n_games)]
+    filename = 'soccer_twos_dqn.png'
+    plotLearning(x, [score[0] for score in scores], [eps[0] for eps in eps_history], filename)
 
     # Log results 
     logger.info(f"ReinforcementLearningAgent", 
@@ -75,12 +60,7 @@ while True:
                     'reward': str(reward),
                     'done': str(done),
                     'info': str(info),
-                    'team_blue_reward': team_blue_reward,
-                    'team_orange_reward': team_orange_reward
+                    'agent_rewards': scores[-1]
                 }})
 
-    if done["__all__"]:
-        print("Total Reward: ", team_blue_reward, " and ", team_orange_reward)
-        team_blue_reward = 0
-        team_orange_reward = 0
-        obs = env.reset()
+    

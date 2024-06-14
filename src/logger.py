@@ -8,7 +8,7 @@ class CustomLogger():
     def __init__(self) -> None:
         # Configure the root logger
         self._logger = logging.getLogger()
-        self._logger.setLevel(logging.DEBUG)
+        self._logger.setLevel(logging.WARNING)
 
         # Create the logs directory if it doesn't exist
         logs_dir = 'src/logs'
