@@ -7,7 +7,7 @@
 
 ## Inspiration
 
-Inspiration code can be found [here](https://github.com/bryanoliveira/soccer-twos-env).
+Inspiration code can be found [here](https://github.com/bryanoliveira/soccer-twos-env). Overview of MARL (Multi Agent Reinforcement Learning) research [here](https://github.com/LantaoYu/MARL-Papers). 
 
 ## Requirements
 
