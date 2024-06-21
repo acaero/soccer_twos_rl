@@ -1,8 +1,30 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
-import gym
+import json
 
+def convert_arrays_to_lists(d):
+    if isinstance(d, dict):
+        return {k: convert_arrays_to_lists(v) for k, v in d.items()}
+    elif isinstance(d, np.ndarray):
+        return d.tolist()
+    else:
+        return d
+
+def read_json_log_file(file_path):
+    log_entries = []
+    try:
+        with file_path.open('r') as file:
+            for line in file:
+                try:
+                    # Parse each line as a JSON object and append to the list
+                    log_entry = json.loads(line.strip())
+                    log_entries.append(log_entry)
+                except json.JSONDecodeError as e:
+                    print(f"Error decoding JSON line: {e}")
+    except Exception as e:
+        print(f"Error reading JSON log file: {e}")
+    return log_entries
 
 def plotLearning(x, scores, epsilons, filename, lines=None):
     fig = plt.figure()
@@ -71,38 +93,3 @@ def scaled_distance(vector1, vector2, scale=1.0, min_value=0.0, max_value=1.0):
     return normalized_distance
 
 
-def adjust_rewards(reward, info):
-    """
-    Adjust rewards based on players' closeness to the ball and proximity to their teammates.
-
-    Parameters:
-    - reward: dict, current rewards for each player
-    - info: dict, information containing player positions and ball position
-
-    Returns:
-    - dict, adjusted rewards for each player
-    """
-    for player_id in range(4):
-        player_position = info[player_id]["player_info"]["position"]
-        ball_position = info[0]["ball_info"]["position"]
-
-        # Reward for being close to the ball
-        # Inverting distance to reward closeness
-        closeness_to_ball = 1 - scaled_distance(player_position, ball_position)
-        reward[player_id] += closeness_to_ball
-
-        # Slight negative reward for players of the same team being close to each other
-        if player_id in [0, 1]:  # Team 1
-            other_team_players = [0, 1]
-        else:  # Team 2
-            other_team_players = [2, 3]
-
-        for teammate_id in other_team_players:
-            if teammate_id != player_id:
-                teammate_position = info[teammate_id]["player_info"]["position"]
-                closeness_to_teammate = scaled_distance(
-                    player_position, teammate_position)
-                reward[player_id] -= closeness_to_teammate * \
-                    0.1  # Adjust the scaling factor as needed
-
-    return reward

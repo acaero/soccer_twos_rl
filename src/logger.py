@@ -4,14 +4,14 @@ import json
 from datetime import datetime, timezone
 import os
 
-class CustomLogger():
-    def __init__(self) -> None:
-        # Configure the root logger
-        self._logger = logging.getLogger()
-        self._logger.setLevel(logging.WARNING)
+class CustomLogger:
+    def __init__(self, name='customLogger'):
+        # Configure a named logger
+        self._logger = logging.getLogger(name)
+        self._logger.setLevel(logging.INFO)
 
         # Create the logs directory if it doesn't exist
-        logs_dir = 'src/logs'
+        logs_dir = 'src/runs/logs'
         os.makedirs(logs_dir, exist_ok=True)
         
         # Create a file handler that logs even debug messages
@@ -32,21 +32,26 @@ class CustomLogger():
         return self._logger
 
 class JSONFormatter(logging.Formatter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-    
     def format(self, record):
+        # Use the log record's created time for the timestamp
+        timestamp = datetime.fromtimestamp(record.created, timezone.utc).isoformat()
+
         log_record = {
-            'timestamp': datetime.now(timezone.utc).isoformat(),  # Corrected line
+            'timestamp': timestamp,
             'level': record.levelname,
             'message': record.getMessage(),
         }
+
+        # Include exception info if present
+        if record.exc_info:
+            log_record['exc_info'] = self.formatException(record.exc_info)
         
+        # Include stack trace if present
+        if record.stack_info:
+            log_record['stack_info'] = self.formatStack(record.stack_info)
+
         # Add custom fields if they exist
         if hasattr(record, 'custom_fields'):
             log_record.update(record.custom_fields)
-        
-        return json.dumps(log_record)
 
-
-
+        return json.dumps(log_record, default=str)
