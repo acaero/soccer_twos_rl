@@ -4,19 +4,20 @@ import json
 from datetime import datetime, timezone
 import os
 
+
 class CustomLogger:
-    def __init__(self, name='customLogger'):
+    def __init__(self, name="customLogger"):
         # Configure a named logger
         self._logger = logging.getLogger(name)
         self._logger.setLevel(logging.INFO)
 
         # Create the logs directory if it doesn't exist
-        logs_dir = 'src/runs/logs'
+        logs_dir = "src/runs/out/logs"
         os.makedirs(logs_dir, exist_ok=True)
-        
+
         # Create a file handler that logs even debug messages
         file_handler = logging.handlers.RotatingFileHandler(
-            os.path.join(logs_dir, 'logs.json'), maxBytes=5*1024*1024, backupCount=5
+            os.path.join(logs_dir, "logs.json"), maxBytes=5 * 1024 * 1024, backupCount=5
         )
 
         # Create and set the custom JSON formatter
@@ -28,8 +29,9 @@ class CustomLogger:
 
     @property
     def logger(self):
-        # This is a getter for the logger 
+        # This is a getter for the logger
         return self._logger
+
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
@@ -37,21 +39,21 @@ class JSONFormatter(logging.Formatter):
         timestamp = datetime.fromtimestamp(record.created, timezone.utc).isoformat()
 
         log_record = {
-            'timestamp': timestamp,
-            'level': record.levelname,
-            'message': record.getMessage(),
+            "timestamp": timestamp,
+            "level": record.levelname,
+            "message": record.getMessage(),
         }
 
         # Include exception info if present
         if record.exc_info:
-            log_record['exc_info'] = self.formatException(record.exc_info)
-        
+            log_record["exc_info"] = self.formatException(record.exc_info)
+
         # Include stack trace if present
         if record.stack_info:
-            log_record['stack_info'] = self.formatStack(record.stack_info)
+            log_record["stack_info"] = self.formatStack(record.stack_info)
 
         # Add custom fields if they exist
-        if hasattr(record, 'custom_fields'):
+        if hasattr(record, "custom_fields"):
             log_record.update(record.custom_fields)
 
         return json.dumps(log_record, default=str)
