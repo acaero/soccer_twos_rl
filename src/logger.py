@@ -3,6 +3,7 @@ import logging.handlers
 import json
 from datetime import datetime, timezone
 import os
+from src.config import LOG_DIR
 
 
 class CustomLogger:
@@ -12,7 +13,7 @@ class CustomLogger:
         self._logger.setLevel(logging.INFO)
 
         # Create the logs directory if it doesn't exist
-        logs_dir = "src/runs/out/logs"
+        logs_dir = LOG_DIR
         os.makedirs(logs_dir, exist_ok=True)
 
         # Create a file handler that logs even debug messages

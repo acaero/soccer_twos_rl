@@ -9,30 +9,23 @@ class RewardShaper:
         self.field_height = field_height
 
     def calculate_reward(self, old_obs, new_obs, info, player_id):
-
         if not REWARD_SHAPING:
             return 0
-
         reward = 0
-
         # Ball possession (2)
         if self._has_ball_possession(info, player_id):
             reward += 0.1
-
         # Field position (3)
         reward += self._field_position_reward(old_obs, new_obs, player_id)
-
         # Energy efficiency (6)
         reward -= 0.01  # Penalty for taking an action
-
         # Time pressure (8)
         reward -= 0.001
-
         return reward
 
     def _has_ball_possession(self, info, player_id):
-        player_pos = info[player_id]["player_info"]["position"]
-        ball_pos = info[player_id]["ball_info"]["position"]
+        player_pos = np.array(info[player_id]["player_info"]["position"])
+        ball_pos = np.array(info[player_id]["ball_info"]["position"])
         distance = np.linalg.norm(player_pos - ball_pos)
         return distance < 1.0  # Assume possession if within 1 unit of the ball
 
@@ -42,9 +35,7 @@ class RewardShaper:
         return 0.05 * (old_distance - new_distance)
 
     def _distance_to_opponent_goal(self, obs, player_id):
-        player_x = obs[player_id * 336 : (player_id + 1) * 336][
-            0
-        ]  # Assuming player's x position is the first element
+        player_x = obs[0]  # Assuming player's x position is the first element
         goal_x = self.field_width / 2 if player_id in [0, 1] else -self.field_width / 2
         return abs(player_x - goal_x)
 
