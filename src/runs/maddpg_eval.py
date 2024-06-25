@@ -17,23 +17,12 @@ def train_maddpg(
     images_dir=IMAGES_DIR,
 ):
     env = soccer_twos.make(render=False)
-    logger = CustomLogger().logger
     reward_shaper = RewardShaper()
 
     num_agents = 4
     state_size = 336
     action_size = 3
-    maddpg_agent = MADDPGAgent(
-        num_agents,
-        state_size,
-        action_size,
-        lr_actor=2e-3,
-        lr_critic=2e-3,
-        tau=1e-3,
-        gamma=0.99,
-        batch_size=1024,
-        buffer_size=int(1e6),
-    )
+    maddpg_agent = MADDPGAgent(num_agents, state_size, action_size, buffer_size=10000)
 
     checkpoint_dir = Path(checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -45,6 +34,7 @@ def train_maddpg(
 
     plain_log_dir = Path(log_dir) / "plain"
     plain_log_dir.mkdir(parents=True, exist_ok=True)
+    logger = CustomLogger(log_dir=LOG_DIR).logger
 
     team1_scores, team2_scores = [], []
     avg_team1_scores, avg_team2_scores = [], []

@@ -18,9 +18,9 @@ class RewardShaper:
         # Field position (3)
         reward += self._field_position_reward(old_obs, new_obs, player_id)
         # Energy efficiency (6)
-        reward -= 0.01  # Penalty for taking an action
+        reward -= 0.002  # Penalty for taking an action
         # Time pressure (8)
-        reward -= 0.001
+        reward -= 0.0002
         return reward
 
     def _has_ball_possession(self, info, player_id):

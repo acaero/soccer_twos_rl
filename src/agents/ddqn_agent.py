@@ -42,6 +42,8 @@ class DDQNAgent:
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        torch.set_default_device(self.device)
+
         self.qnetwork_local = QNetwork(state_size, action_size).to(self.device)
         self.qnetwork_target = QNetwork(state_size, action_size).to(self.device)
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=learning_rate)

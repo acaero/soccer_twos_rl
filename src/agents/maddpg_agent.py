@@ -40,32 +40,42 @@ class Actor(nn.Module):
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 128)
         self.fc4 = nn.Linear(128, 64)
-        self.fc5 = nn.Linear(64, action_size)
+        self.fc5 = nn.Linear(
+            64, action_size * 3
+        )  # 3 actions, each with 3 possibilities
 
     def forward(self, state):
         x = torch.relu(self.fc1(state))
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
         x = torch.relu(self.fc4(x))
-        return torch.tanh(self.fc5(x))
+        return torch.softmax(
+            self.fc5(x).view(-1, 3, 3), dim=2
+        )  # Apply softmax to each group of 3
 
 
 class Critic(nn.Module):
     def __init__(self, state_size, action_size, num_agents):
         super(Critic, self).__init__()
-        self.fc1 = nn.Linear(state_size * num_agents + action_size * num_agents, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, 64)
-        self.fc5 = nn.Linear(64, 1)
+        self.fc1 = nn.Linear(
+            state_size * num_agents + action_size * 3 * num_agents, 2048
+        )
+        self.fc2 = nn.Linear(2048, 1024)
+        self.fc3 = nn.Linear(1024, 512)
+        self.fc4 = nn.Linear(512, 256)
+        self.fc5 = nn.Linear(256, 128)
+        self.fc6 = nn.Linear(128, 64)
+        self.fc7 = nn.Linear(64, 1)
 
     def forward(self, states, actions):
-        x = torch.cat([states, actions], dim=1)
+        x = torch.cat([states, actions * 3], dim=1)
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
         x = torch.relu(self.fc4(x))
-        return self.fc5(x)
+        x = torch.relu(self.fc5(x))
+        x = torch.relu(self.fc6(x))
+        return self.fc7(x)
 
 
 class MADDPGAgent:
@@ -78,13 +88,14 @@ class MADDPGAgent:
         lr_critic=0.001,
         gamma=0.99,
         tau=1e-3,
-        buffer_size=10000,
-        batch_size=64,
+        buffer_size=1000,
+        batch_size=1024,
     ):
         self.num_agents = num_agents
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        torch.set_default_device(self.device)
 
         # Initialize actors and critics for each agent
         self.actors_local = [
@@ -123,11 +134,17 @@ class MADDPGAgent:
             state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
             self.actors_local[i].eval()
             with torch.no_grad():
-                action = self.actors_local[i](state).cpu().data.numpy().flatten()
+                action_probs = self.actors_local[i](state).cpu().data.numpy().squeeze()
             self.actors_local[i].train()
+
             if add_noise:
-                action += np.random.normal(0, 0.1, size=self.action_size)
-            actions[agent_id] = np.clip(action, -1, 1)
+                noise = np.random.normal(0, 0.1, size=action_probs.shape)
+                action_probs += noise
+                action_probs = np.clip(action_probs, 0, 1)
+                action_probs /= action_probs.sum(axis=1, keepdims=True)  # Renormalize
+
+            discrete_actions = np.argmax(action_probs, axis=1)
+            actions[agent_id] = discrete_actions
         return actions
 
     def remember(self, obs, actions, rewards, next_obs, done):
@@ -156,31 +173,31 @@ class MADDPGAgent:
         next_states = torch.FloatTensor(next_states).to(self.device)
         dones = torch.FloatTensor(dones).unsqueeze(1).to(self.device)
 
-        print(f"States shape: {states.shape}")
-        print(f"Actions shape: {actions.shape}")
-        print(f"Rewards shape: {rewards.shape}")
-        print(f"Next states shape: {next_states.shape}")
-        print(f"Dones shape: {dones.shape}")
-
         for i in range(self.num_agents):
+            # Convert discrete actions to one-hot encoded form
+            actions_one_hot = torch.zeros(
+                self.batch_size, self.num_agents, self.action_size, 3
+            ).to(self.device)
+            actions_one_hot.scatter_(3, actions.long().unsqueeze(-1), 1)
+            actions_one_hot = actions_one_hot.view(self.batch_size, -1)
+
             # Update critics
             next_actions = torch.cat(
                 [
-                    self.actors_target[j](next_states[:, j])
+                    self.actors_target[j](next_states[:, j]).view(self.batch_size, -1)
                     for j in range(self.num_agents)
                 ],
                 dim=1,
             )
             q_targets_next = self.critics_target[i](
-                next_states.reshape(self.batch_size, -1), next_actions
+                next_states.view(self.batch_size, -1), next_actions
             )
             q_targets = rewards[:, i].unsqueeze(1) + (
                 self.gamma * q_targets_next * (1 - dones)
             )
 
             q_expected = self.critics_local[i](
-                states.reshape(self.batch_size, -1),
-                actions.reshape(self.batch_size, -1),
+                states.view(self.batch_size, -1), actions_one_hot
             )
             critic_loss = nn.MSELoss()(q_expected, q_targets)
 
@@ -190,13 +207,19 @@ class MADDPGAgent:
 
             # Update actors
             actions_pred = [
-                self.actors_local[j](states[:, j]) if j == i else actions[:, j].detach()
+                (
+                    self.actors_local[j](states[:, j]).view(self.batch_size, -1)
+                    if j == i
+                    else actions_one_hot[
+                        :, j * self.action_size * 3 : (j + 1) * self.action_size * 3
+                    ].detach()
+                )
                 for j in range(self.num_agents)
             ]
             actions_pred = torch.cat(actions_pred, dim=1)
 
             actor_loss = -self.critics_local[i](
-                states.reshape(self.batch_size, -1), actions_pred
+                states.view(self.batch_size, -1), actions_pred
             ).mean()
 
             self.actors_optimizer[i].zero_grad()
@@ -258,69 +281,3 @@ class MADDPGAgent:
             self.critics_optimizer[i].load_state_dict(
                 checkpoint["critics_optimizer_state_dict"][i]
             )
-
-
-def exploratory_test_maddpg(n_episodes=10):
-    import soccer_twos
-    from src.utils import RewardShaper
-
-    env = soccer_twos.make(render=True)
-    reward_shaper = RewardShaper()
-
-    # Initialize MADDPG agents
-    num_agents = 4
-    state_size = 336
-    action_size = 3
-    maddpg_agent = MADDPGAgent(num_agents, state_size, action_size)
-
-    # Collect initial experiences
-    initial_experiences = 1000
-    experiences_count = 0
-
-    while experiences_count < initial_experiences:
-        obs = env.reset()
-        done = False
-        while not done:
-            actions = maddpg_agent.act(obs)
-            next_obs, rewards, dones, info = env.step(actions)
-            done = dones["__all__"]
-
-            maddpg_agent.remember(obs, actions, rewards, next_obs, dones)
-            experiences_count += 1
-
-            obs = next_obs
-            if experiences_count >= initial_experiences:
-                break
-
-    print(f"Collected {experiences_count} initial experiences")
-
-    for episode in range(n_episodes):
-        obs = env.reset()
-        done = False
-        total_rewards = {agent_id: 0 for agent_id in obs.keys()}
-        while not done:
-            actions = maddpg_agent.act(obs)
-            next_obs, rewards, dones, info = env.step(actions)
-            done = dones["__all__"]
-
-            # Calculate and log rewards
-            shaped_rewards = {}
-            for agent_id in obs.keys():
-                shaped_reward = reward_shaper.calculate_reward(
-                    obs[agent_id], next_obs[agent_id], info, int(agent_id)
-                )
-                shaped_rewards[agent_id] = shaped_reward
-                total_rewards[agent_id] += rewards[agent_id] + shaped_reward
-
-            maddpg_agent.remember(obs, actions, rewards, next_obs, dones)
-            maddpg_agent.replay()
-
-            obs = next_obs
-
-        print(f"Episode {episode + 1}/{n_episodes} - Total Rewards: {total_rewards}")
-
-    env.close()
-
-
-if __name__ == "__main__":
-    exploratory_test_maddpg(n_episodes=10)

@@ -7,13 +7,13 @@ from src.config import LOG_DIR
 
 
 class CustomLogger:
-    def __init__(self, name="customLogger"):
+    def __init__(self, name="customLogger", log_dir=LOG_DIR):
         # Configure a named logger
         self._logger = logging.getLogger(name)
         self._logger.setLevel(logging.INFO)
 
         # Create the logs directory if it doesn't exist
-        logs_dir = LOG_DIR
+        logs_dir = log_dir
         os.makedirs(logs_dir, exist_ok=True)
 
         # Create a file handler that logs even debug messages

@@ -50,6 +50,7 @@ class DDPGAgent:
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        torch.set_default_device(self.device)
 
         self.actor_local = Actor(state_size, action_size).to(self.device)
         self.actor_target = Actor(state_size, action_size).to(self.device)
