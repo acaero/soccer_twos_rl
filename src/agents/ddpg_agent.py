@@ -5,7 +5,6 @@ import numpy as np
 import random
 
 
-# Define the Actor Network
 class Actor(nn.Module):
     def __init__(self, state_size, action_size):
         super(Actor, self).__init__()
@@ -13,21 +12,21 @@ class Actor(nn.Module):
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 128)
         self.fc4 = nn.Linear(128, 64)
-        self.fc5 = nn.Linear(64, action_size)
+        self.fc5 = nn.Linear(64, action_size * 3)
 
     def forward(self, state):
         x = torch.relu(self.fc1(state))
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
         x = torch.relu(self.fc4(x))
-        return torch.tanh(self.fc5(x))
+        return torch.softmax(self.fc5(x).view(-1, 3, 3), dim=2)
 
 
 # Define the Critic Network
 class Critic(nn.Module):
     def __init__(self, state_size, action_size):
         super(Critic, self).__init__()
-        self.fc1 = nn.Linear(state_size + action_size, 512)
+        self.fc1 = nn.Linear(state_size + action_size * 3, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 128)
         self.fc4 = nn.Linear(128, 64)
@@ -45,7 +44,14 @@ class Critic(nn.Module):
 # Define the DDPG Agent
 class DDPGAgent:
     def __init__(
-        self, state_size, action_size, learning_rate=0.001, gamma=0.99, tau=1e-3
+        self,
+        state_size,
+        action_size,
+        learning_rate=0.001,
+        gamma=0.99,
+        batch_size=1024,
+        memory_buffer=1000,
+        tau=1e-3,
     ):
         self.state_size = state_size
         self.action_size = action_size
@@ -68,11 +74,12 @@ class DDPGAgent:
         self.tau = tau
 
         self.memory = []
-        self.batch_size = 64
+        self.memory_size = memory_buffer
+        self.batch_size = batch_size
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
-        if len(self.memory) > 10000:
+        if len(self.memory) > self.memory_size:
             self.memory.pop(0)
 
     def act(self, state):
@@ -80,8 +87,9 @@ class DDPGAgent:
         self.actor_local.eval()
         with torch.no_grad():
             action = self.actor_local(state).cpu().data.numpy().flatten()
+            print("action", action)
         self.actor_local.train()
-        return action
+        return np.argmax(action, axis=1)
 
     def replay(self):
         if len(self.memory) < self.batch_size:

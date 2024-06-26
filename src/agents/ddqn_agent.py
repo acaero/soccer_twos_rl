@@ -33,11 +33,14 @@ class DDQNAgent:
         self,
         state_size,
         action_size,
-        learning_rate=0.001,
+        learning_rate=0.002,
         gamma=0.99,
         epsilon_start=1.0,
         epsilon_min=0.01,
-        epsilon_decay=0.995,
+        epsilon_decay=0.99,
+        batch_size=128,
+        buffer_size=10000,
+        tau=1e-3,
     ):
         self.state_size = state_size
         self.action_size = action_size
@@ -53,12 +56,13 @@ class DDQNAgent:
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
         self.memory = []
-        self.batch_size = 64
-        self.tau = 1e-3  # Soft update parameter
+        self.buffer_size = buffer_size
+        self.batch_size = batch_size
+        self.tau = tau
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
-        if len(self.memory) > 10000:
+        if len(self.memory) > self.buffer_size:
             self.memory.pop(0)
 
     def act(self, state):

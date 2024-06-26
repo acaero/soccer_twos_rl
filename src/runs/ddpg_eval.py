@@ -1,5 +1,5 @@
 from src.utils import convert_arrays_to_lists, RewardShaper
-from src.config import CHECKPOINT_DIR, N_GAMES, IMAGES_DIR
+from src.config import CHECKPOINT_DIR, N_GAMES, IMAGES_DIR, LOG_DIR
 import numpy as np
 import soccer_twos
 from tqdm import tqdm
@@ -7,11 +7,16 @@ import matplotlib.pyplot as plt
 from src.logger import CustomLogger
 from pathlib import Path
 from src.agents.ddpg_agent import DDPGAgent
+from torch.utils.tensorboard import SummaryWriter
 
 
-def train_ddpg(n_games=N_GAMES, checkpoint_dir=CHECKPOINT_DIR):
+def train_ddpg(
+    n_games=N_GAMES,
+    checkpoint_dir=CHECKPOINT_DIR,
+    log_dir=LOG_DIR,
+    images_dir=IMAGES_DIR,
+):
     env = soccer_twos.make()
-    logger = CustomLogger().logger
     reward_shaper = RewardShaper()
 
     scores, avg_scores = [], []
@@ -21,10 +26,20 @@ def train_ddpg(n_games=N_GAMES, checkpoint_dir=CHECKPOINT_DIR):
     checkpoint_dir = Path(checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
+    tensorboard_log_dir = Path(log_dir) / "tensorboard"
+    tensorboard_log_dir.mkdir(parents=True, exist_ok=True)
+
+    writer = SummaryWriter(log_dir=tensorboard_log_dir)
+
+    plain_log_dir = Path(log_dir) / "plain"
+    plain_log_dir.mkdir(parents=True, exist_ok=True)
+    logger = CustomLogger(log_dir=plain_log_dir).logger
+
     for i in tqdm(range(n_games)):
         obs = env.reset()
         done = False
         score = 0
+        episode_loss = 0
         while not done:
             actions = {}
             for player_id in range(4):
@@ -42,7 +57,9 @@ def train_ddpg(n_games=N_GAMES, checkpoint_dir=CHECKPOINT_DIR):
             )
 
             ddpg_agent.remember(obs[0], actions[0], reward, next_obs[0], done)
-            ddpg_agent.replay()
+            loss = ddpg_agent.replay()
+            if loss is not None:
+                episode_loss += loss
 
             obs = next_obs
             score += reward
@@ -51,11 +68,12 @@ def train_ddpg(n_games=N_GAMES, checkpoint_dir=CHECKPOINT_DIR):
         avg_score = np.mean(scores[-100:])
         avg_scores.append(avg_score)
 
-        if i % 10 == 0:
-            print(f"Episode: {i}, Score: {score:.2f}, Avg Score: {avg_score:.2f}")
-            checkpoint_filename = checkpoint_dir / f"checkpoint_DDPG_{i}.pth"
-            ddpg_agent.save(checkpoint_filename)
+        # Log metrics to TensorBoard
+        writer.add_scalar("Score", score, i)
+        writer.add_scalar("Average Score", avg_score, i)
+        writer.add_scalar("Loss/Episode Loss", episode_loss, i)
 
+        # Log metrics to plain log file
         logger.info(
             "DDPG Agent",
             extra={
@@ -71,18 +89,26 @@ def train_ddpg(n_games=N_GAMES, checkpoint_dir=CHECKPOINT_DIR):
             },
         )
 
+        if i % 10 == 0:
+            print(f"Episode: {i}, Score: {score:.2f}, Avg Score: {avg_score:.2f}")
+            checkpoint_filename = checkpoint_dir / f"checkpoint_DDPG_{i}.pth"
+            ddpg_agent.save(checkpoint_filename)
+
+    env.close()
+    writer.close()
+
     return scores, avg_scores
 
 
 def visualize_performance(episodes, scores, avg_scores, filename):
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12))
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    ax1.plot(episodes, scores, label="Score", alpha=0.6)
-    ax1.plot(episodes, avg_scores, label="Average Score", linewidth=2)
-    ax1.set_xlabel("Episode")
-    ax1.set_ylabel("Score")
-    ax1.set_title("DDPG Performance")
-    ax1.legend()
+    ax.plot(episodes, scores, label="Score", alpha=0.6)
+    ax.plot(episodes, avg_scores, label="Average Score", linewidth=2)
+    ax.set_xlabel("Episode")
+    ax.set_ylabel("Score")
+    ax.set_title("DDPG Performance")
+    ax.legend()
 
     plt.tight_layout()
     plt.savefig(filename)

@@ -3,37 +3,32 @@ from src.config import CHECKPOINT_DIR, N_GAMES, IMAGES_DIR, LOG_DIR
 import numpy as np
 import soccer_twos
 from tqdm import tqdm
-from pathlib import Path
-from src.logger import CustomLogger
-from src.agents.maddpg_agent import MADDPGAgent
-from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
+from src.agents.ddqn_agent import DDQNAgent
+from src.logger import CustomLogger
+from torch.utils.tensorboard import SummaryWriter
+from pathlib import Path
 
 
-def train_maddpg(
-    n_games=N_GAMES,
-    checkpoint_dir=CHECKPOINT_DIR,
-    log_dir=LOG_DIR,
-    images_dir=IMAGES_DIR,
+def train_ddqn(
+    n_games=N_GAMES, checkpoint_dir=CHECKPOINT_DIR, log_dir=LOG_DIR, mode="single"
 ):
-    env = soccer_twos.make(render=False)
-    logger = CustomLogger().logger
+    env = soccer_twos.make()
     reward_shaper = RewardShaper()
 
-    num_agents = 4
-    state_size = 336
-    action_size = 3
-    maddpg_agent = MADDPGAgent(
-        num_agents,
-        state_size,
-        action_size,
-        lr_actor=2e-3,
-        lr_critic=2e-3,
-        tau=1e-3,
-        gamma=0.99,
-        batch_size=1024,
-        buffer_size=int(1e6),
-    )
+    scores, eps_history, avg_scores = [], [], []
+
+    if mode == "single":
+        ddqn_agents = [DDQNAgent(336, 3)]
+        agent_indices = [0]
+    elif mode == "team":
+        ddqn_agents = [DDQNAgent(336, 3), DDQNAgent(336, 3)]
+        agent_indices = [0, 1]
+    elif mode == "all":
+        ddqn_agents = [DDQNAgent(336, 3) for _ in range(4)]
+        agent_indices = list(range(4))
+    else:
+        raise ValueError("Invalid mode. Choose from 'single', 'team', or 'all'.")
 
     checkpoint_dir = Path(checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -45,123 +40,107 @@ def train_maddpg(
 
     plain_log_dir = Path(log_dir) / "plain"
     plain_log_dir.mkdir(parents=True, exist_ok=True)
-
-    team1_scores, team2_scores = [], []
-    avg_team1_scores, avg_team2_scores = [], []
-
-    # Collect initial experiences
-    initial_experiences = 1000
-    experiences_count = 0
-    obs = env.reset()
-    while experiences_count < initial_experiences:
-        actions = maddpg_agent.act(obs)
-        next_obs, rewards, dones, info = env.step(actions)
-        done = dones["__all__"]
-        maddpg_agent.remember(obs, actions, rewards, next_obs, dones)
-        experiences_count += 1
-        obs = next_obs
-        if done:
-            obs = env.reset()
-
-    print(f"Collected {experiences_count} initial experiences")
+    logger = CustomLogger(log_dir=plain_log_dir).logger
 
     for i in tqdm(range(n_games)):
         obs = env.reset()
         done = False
-        team1_score = 0
-        team2_score = 0
+        score = 0
         episode_loss = 0
         while not done:
-            actions = maddpg_agent.act(obs)
-            next_obs, rewards, dones, info = env.step(actions)
-            done = dones["__all__"]
+            actions = {}
+            for player_id in range(4):
+                if player_id in agent_indices:
+                    actions[player_id] = ddqn_agents[
+                        agent_indices.index(player_id)
+                    ].act(obs[player_id])
+                else:
+                    actions[player_id] = [0, 0, 0]  # Static action for other agents
 
-            shaped_rewards = {}
-            for agent_id in obs.keys():
-                shaped_reward = reward_shaper.calculate_reward(
-                    obs[agent_id], next_obs[agent_id], info, int(agent_id)
+            next_obs, reward, done, info = env.step(actions)
+            done = done["__all__"]
+
+            for player_id in agent_indices:
+                shaped_reward = reward[player_id] * 10 + reward_shaper.calculate_reward(
+                    obs[player_id], next_obs[player_id], info, player_id
                 )
-                shaped_rewards[agent_id] = shaped_reward
-                rewards[agent_id] += shaped_reward
 
-            maddpg_agent.remember(obs, actions, rewards, next_obs, dones)
-            loss = maddpg_agent.replay()
-            if loss is not None:
-                episode_loss += loss
+                ddqn_agents[agent_indices.index(player_id)].remember(
+                    obs[player_id],
+                    actions[player_id],
+                    shaped_reward,
+                    next_obs[player_id],
+                    done,
+                )
+                loss = ddqn_agents[agent_indices.index(player_id)].replay()
+                if loss is not None:
+                    episode_loss += loss
+
+                score += shaped_reward
 
             obs = next_obs
-            team1_score += rewards[0] + rewards[1]
-            team2_score += rewards[2] + rewards[3]
 
-        team1_scores.append(team1_score)
-        team2_scores.append(team2_score)
-        avg_team1_score = np.mean(team1_scores[-100:])
-        avg_team2_score = np.mean(team2_scores[-100:])
-        avg_team1_scores.append(avg_team1_score)
-        avg_team2_scores.append(avg_team2_score)
+        scores.append(score)
+        eps_history.append(
+            ddqn_agents[0].epsilon
+        )  # Assume all agents share the same epsilon
+        avg_score = np.mean(scores[-100:])
+        avg_scores.append(avg_score)
 
         # Log metrics to TensorBoard
-        writer.add_scalar("Team1/Score", team1_score, i)
-        writer.add_scalar("Team2/Score", team2_score, i)
-        writer.add_scalar("Team1/Average Score", avg_team1_score, i)
-        writer.add_scalar("Team2/Average Score", avg_team2_score, i)
+        writer.add_scalar("Score", score, i)
+        writer.add_scalar("Average Score", avg_score, i)
+        writer.add_scalar("Epsilon", ddqn_agents[0].epsilon, i)
         writer.add_scalar("Loss/Episode Loss", episode_loss, i)
 
         # Log metrics to plain log file
         logger.info(
-            "MADDPG Agent",
+            "DDQN Agent",
             extra={
                 "custom_fields": {
                     "episode": i,
-                    "team1_score": team1_score,
-                    "team2_score": team2_score,
-                    "average_team1_score": avg_team1_score,
-                    "average_team2_score": avg_team2_score,
-                    "reward": str(convert_arrays_to_lists(rewards)),
-                    "done": str(convert_arrays_to_lists(dones)),
+                    "score": score,
+                    "average_score": avg_score,
+                    "epsilon": ddqn_agents[0].epsilon,
+                    "reward": str(convert_arrays_to_lists(reward)),
+                    "done": str(convert_arrays_to_lists(done)),
                     "info": str(convert_arrays_to_lists(info)),
-                    "observations": str(convert_arrays_to_lists(obs)),
                 }
             },
         )
 
         if i % 10 == 0:
             print(
-                f"Episode: {i}, Team 1 Score: {team1_score:.2f}, Team 2 Score: {team2_score:.2f}, Avg Team 1 Score: {avg_team1_score:.2f}, Avg Team 2 Score: {avg_team2_score:.2f}"
+                f"Episode: {i}, Score: {score:.2f}, Avg Score: {avg_score:.2f}, Epsilon: {ddqn_agents[0].epsilon:.2f}"
             )
-            checkpoint_filename = checkpoint_dir / f"checkpoint_MADDPG_{i}.pth"
-            maddpg_agent.save(checkpoint_filename)
+            checkpoint_filename = checkpoint_dir / f"checkpoint_DDQN_{i}.pth"
+            for agent_id, agent in enumerate(ddqn_agents):
+                agent.save(
+                    checkpoint_filename.with_name(
+                        f"checkpoint_DDQN_agent_{agent_id}_{i}.pth"
+                    )
+                )
 
     env.close()
     writer.close()
 
-    # Save performance visualization
-    visualize_performance(
-        range(n_games),
-        team1_scores,
-        avg_team1_scores,
-        team2_scores,
-        avg_team2_scores,
-        images_dir / "average_reward.png",
-    )
-
-    return team1_scores, team2_scores, avg_team1_scores, avg_team2_scores
+    return scores, avg_scores, eps_history
 
 
-def visualize_performance(
-    episodes, team1_scores, avg_team1_scores, team2_scores, avg_team2_scores, filename
-):
-    fig, ax = plt.subplots(figsize=(10, 6))
+def visualize_performance(episodes, scores, avg_scores, epsilons, filename):
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12))
 
-    ax.plot(episodes, team1_scores, label="Team 1 Score", alpha=0.6)
-    ax.plot(episodes, avg_team1_scores, label="Average Team 1 Score", linewidth=2)
-    ax.plot(episodes, team2_scores, label="Team 2 Score", alpha=0.6)
-    ax.plot(episodes, avg_team2_scores, label="Average Team 2 Score", linewidth=2)
+    ax1.plot(episodes, scores, label="Score", alpha=0.6)
+    ax1.plot(episodes, avg_scores, label="Average Score", linewidth=2)
+    ax1.set_xlabel("Episode")
+    ax1.set_ylabel("Score")
+    ax1.set_title("DDQN Performance")
+    ax1.legend()
 
-    ax.set_xlabel("Episode")
-    ax.set_ylabel("Score")
-    ax.set_title("MADDPG Performance")
-    ax.legend()
+    ax2.plot(episodes, epsilons)
+    ax2.set_xlabel("Episode")
+    ax2.set_ylabel("Epsilon")
+    ax2.set_title("Exploration Rate")
 
     plt.tight_layout()
     plt.savefig(filename)
@@ -169,6 +148,15 @@ def visualize_performance(
 
 
 if __name__ == "__main__":
-    team1_scores, team2_scores, avg_team1_scores, avg_team2_scores = train_maddpg(
-        n_games=N_GAMES
+    mode = "team"  # Change this to 'single', 'team' or 'all' as needed
+    scores, avg_scores, eps_history = train_ddqn(n_games=N_GAMES, mode=mode)
+    episodes = list(range(1, len(scores) + 1))
+    image_dir = Path(IMAGES_DIR)
+    image_dir.mkdir(parents=True, exist_ok=True)
+    visualize_performance(
+        episodes,
+        scores,
+        avg_scores,
+        eps_history,
+        image_dir / f"soccer_twos_ddqn_performance_{mode}.png",
     )
