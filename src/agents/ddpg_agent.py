@@ -22,7 +22,6 @@ class Actor(nn.Module):
         return torch.softmax(self.fc5(x).view(-1, 3, 3), dim=2)
 
 
-# Define the Critic Network
 class Critic(nn.Module):
     def __init__(self, state_size, action_size):
         super(Critic, self).__init__()
@@ -41,7 +40,84 @@ class Critic(nn.Module):
         return self.fc5(x)
 
 
-# Define the DDPG Agent
+class DDPGAgents:
+    def __init__(
+        self,
+        num_agents,
+        state_size,
+        action_size,
+        learning_rate=0.001,
+        gamma=0.99,
+        batch_size=1024,
+        memory_buffer=1000,
+        tau=1e-3,
+    ):
+        self.num_agents = num_agents
+        self.agents = [
+            DDPGAgent(
+                state_size,
+                action_size,
+                learning_rate,
+                gamma,
+                batch_size,
+                memory_buffer,
+                tau,
+            )
+            for _ in range(num_agents)
+        ]
+
+    def remember(self, state, actions, rewards, next_state, done):
+        [
+            self.agents[i].remember(
+                state[i], actions[i], rewards[i], next_state[i], done
+            )
+            for i in range(len(self.agents))
+        ]
+
+    def act(self, state):
+        actions = {i: self.agents[i].act(state[i]) for i in range(self.num_agents)}
+        return actions
+
+    def replay(self):
+        [agent.replay() for agent in self.agents]
+
+    def save(self, filename):
+        checkpoint = {}
+        for i, agent in enumerate(self.agents):
+            checkpoint[f"agent_{i}"] = {
+                "actor_local_state_dict": agent.actor_local.state_dict(),
+                "actor_target_state_dict": agent.actor_target.state_dict(),
+                "critic_local_state_dict": agent.critic_local.state_dict(),
+                "critic_target_state_dict": agent.critic_target.state_dict(),
+                "actor_optimizer_state_dict": agent.actor_optimizer.state_dict(),
+                "critic_optimizer_state_dict": agent.critic_optimizer.state_dict(),
+            }
+        torch.save(checkpoint, filename)
+
+    def load(self, filename):
+        checkpoint = torch.load(filename)
+        for i, agent in enumerate(self.agents):
+            agent_checkpoint = checkpoint[f"agent_{i}"]
+            agent.actor_local.load_state_dict(
+                agent_checkpoint["actor_local_state_dict"]
+            )
+            agent.actor_target.load_state_dict(
+                agent_checkpoint["actor_target_state_dict"]
+            )
+            agent.critic_local.load_state_dict(
+                agent_checkpoint["critic_local_state_dict"]
+            )
+            agent.critic_target.load_state_dict(
+                agent_checkpoint["critic_target_state_dict"]
+            )
+            agent.actor_optimizer.load_state_dict(
+                agent_checkpoint["actor_optimizer_state_dict"]
+            )
+            agent.critic_optimizer.load_state_dict(
+                agent_checkpoint["critic_optimizer_state_dict"]
+            )
+
+
 class DDPGAgent:
     def __init__(
         self,
@@ -86,10 +162,17 @@ class DDPGAgent:
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         self.actor_local.eval()
         with torch.no_grad():
-            action = self.actor_local(state).cpu().data.numpy().flatten()
-            print("action", action)
+            action_probs = self.actor_local(state).cpu().data.numpy().squeeze()
         self.actor_local.train()
-        return np.argmax(action, axis=1)
+
+        # Add noise and renormalize
+        noise = np.random.normal(0, 0.1, size=action_probs.shape)
+        action_probs += noise
+        action_probs = np.clip(action_probs, 0, 1)
+        action_probs /= action_probs.sum(axis=1, keepdims=True)  # Renormalize
+
+        discrete_actions = np.argmax(action_probs, axis=1)
+        return discrete_actions
 
     def replay(self):
         if len(self.memory) < self.batch_size:
@@ -104,12 +187,21 @@ class DDPGAgent:
         next_states = torch.FloatTensor(np.array(next_states)).to(self.device)
         dones = torch.FloatTensor(dones).unsqueeze(1).to(self.device)
 
+        # Convert discrete actions to one-hot encoded form
+        actions_one_hot = torch.zeros(self.batch_size, self.action_size, 3).to(
+            self.device
+        )
+        actions_one_hot.scatter_(2, actions.long().unsqueeze(-1), 1)
+        actions_one_hot = actions_one_hot.view(self.batch_size, -1)
+
         # Update Critic
         next_actions = self.actor_target(next_states)
-        next_q_values = self.critic_target(next_states, next_actions)
+        next_q_values = self.critic_target(
+            next_states, next_actions.view(self.batch_size, -1)
+        )
         q_targets = rewards + (self.gamma * next_q_values * (1 - dones))
 
-        q_expected = self.critic_local(states, actions)
+        q_expected = self.critic_local(states, actions_one_hot)
         critic_loss = nn.MSELoss()(q_expected, q_targets)
 
         self.critic_optimizer.zero_grad()
@@ -118,7 +210,9 @@ class DDPGAgent:
 
         # Update Actor
         actions_pred = self.actor_local(states)
-        actor_loss = -self.critic_local(states, actions_pred).mean()
+        actor_loss = -self.critic_local(
+            states, actions_pred.view(self.batch_size, -1)
+        ).mean()
 
         self.actor_optimizer.zero_grad()
         actor_loss.backward()

@@ -27,6 +27,83 @@ class QNetwork(nn.Module):
         )  # Reshape to (batch_size, 3 dimensions, 3 options)
 
 
+class DDQNAgents:
+    def __init__(
+        self,
+        num_agents,
+        state_size,
+        action_size,
+        learning_rate=0.002,
+        gamma=0.99,
+        epsilon_start=1.0,
+        epsilon_min=0.01,
+        epsilon_decay=0.99,
+        batch_size=128,
+        buffer_size=10000,
+        tau=1e-3,
+    ):
+
+        self.num_agents = num_agents
+        self.agents = [
+            DDQNAgent(
+                state_size,
+                action_size,
+                learning_rate,
+                gamma,
+                epsilon_start,
+                epsilon_min,
+                epsilon_decay,
+                batch_size,
+                buffer_size,
+                tau,
+            )
+            for _ in range(num_agents)
+        ]
+
+    def remember(self, state, actions, rewards, next_state, done):
+        [
+            self.agents[i].remember(
+                state[i], actions[i], rewards[i], next_state[i], done
+            )
+            for i in range(len(self.agents))
+        ]
+
+    def act(self, state):
+        actions = {i: self.agents[i].act(state[i]) for i in range(self.num_agents)}
+        return actions
+
+    def replay(self):
+        [agent.replay() for agent in self.agents]
+
+    @property
+    def epsilon(self):
+        return np.mean([agent.epsilon for agent in self.agents])
+
+    def save(self, filename):
+        checkpoint = {}
+        for i, agent in enumerate(self.agents):
+            checkpoint[f"agent_{i}"] = {
+                "qnetwork_local_state_dict": agent.qnetwork_local.state_dict(),
+                "qnetwork_target_state_dict": agent.qnetwork_target.state_dict(),
+                "optimizer_state_dict": agent.optimizer.state_dict(),
+                "epsilon": agent.epsilon,
+            }
+        torch.save(checkpoint, filename)
+
+    def load(self, filename):
+        checkpoint = torch.load(filename)
+        for i, agent in enumerate(self.agents):
+            agent_checkpoint = checkpoint[f"agent_{i}"]
+            agent.qnetwork_local.load_state_dict(
+                agent_checkpoint["qnetwork_local_state_dict"]
+            )
+            agent.qnetwork_target.load_state_dict(
+                agent_checkpoint["qnetwork_target_state_dict"]
+            )
+            agent.optimizer.load_state_dict(agent_checkpoint["optimizer_state_dict"])
+            agent.epsilon = agent_checkpoint["epsilon"]
+
+
 # Define the DDQN Agent
 class DDQNAgent:
     def __init__(
