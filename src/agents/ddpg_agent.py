@@ -10,25 +10,27 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         self.fc1 = nn.Linear(state_size, 512)
         self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, 64)
-        self.fc5 = nn.Linear(64, action_size * 3)
+        self.fc3 = nn.Linear(256, 64)
+        self.fc4 = nn.Linear(
+            64, action_size * 3
+        )  # 3 actions, each with 3 possibilities
 
     def forward(self, state):
         x = torch.relu(self.fc1(state))
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
-        x = torch.relu(self.fc4(x))
-        return torch.softmax(self.fc5(x).view(-1, 3, 3), dim=2)
+        return torch.softmax(
+            self.fc4(x).view(-1, 3, 3), dim=2
+        )  # Apply softmax to each group of 3
 
 
 class Critic(nn.Module):
     def __init__(self, state_size, action_size):
         super(Critic, self).__init__()
-        self.fc1 = nn.Linear(state_size + action_size * 3, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, 64)
+        self.fc1 = nn.Linear(state_size + action_size * 3, 1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.fc3 = nn.Linear(512, 256)
+        self.fc4 = nn.Linear(256, 64)
         self.fc5 = nn.Linear(64, 1)
 
     def forward(self, state, action):
@@ -46,10 +48,10 @@ class DDPGAgents:
         num_agents,
         state_size,
         action_size,
-        learning_rate=0.001,
+        learning_rate=0.002,
         gamma=0.99,
         batch_size=1024,
-        memory_buffer=1000,
+        memory_buffer=10240,
         tau=1e-3,
     ):
         self.num_agents = num_agents
@@ -123,10 +125,10 @@ class DDPGAgent:
         self,
         state_size,
         action_size,
-        learning_rate=0.001,
+        learning_rate=0.002,
         gamma=0.99,
         batch_size=1024,
-        memory_buffer=1000,
+        memory_buffer=10240,
         tau=1e-3,
     ):
         self.state_size = state_size
@@ -203,7 +205,6 @@ class DDPGAgent:
 
         q_expected = self.critic_local(states, actions_one_hot)
         critic_loss = nn.MSELoss()(q_expected, q_targets)
-
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         self.critic_optimizer.step()
@@ -220,6 +221,8 @@ class DDPGAgent:
 
         self.soft_update(self.critic_local, self.critic_target, self.tau)
         self.soft_update(self.actor_local, self.actor_target, self.tau)
+
+        return critic_loss.item()
 
     def soft_update(self, local_model, target_model, tau):
         for target_param, local_param in zip(

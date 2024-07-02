@@ -1,3 +1,4 @@
+import random
 from src.utils import shape_rewards
 from tqdm import tqdm
 import soccer_twos
@@ -7,15 +8,13 @@ from src.logger import CustomLogger
 
 
 def train_ddqn(n_games, n_agents):
-    env = soccer_twos.make()
+    env = soccer_twos.make(worker_id=random.randint(0, 100))
 
     agent_indices = []
     for i in range(n_agents):
         agent_indices.append(i)
 
-    ddqn_agents = DDQNAgents(
-        n_agents, 336, 3, buffer_size=10000, batch_size=1024, learning_rate=0.001
-    )
+    ddqn_agents = DDQNAgents(n_agents, 336, 3)
 
     logger = CustomLogger("ddqn")
 
@@ -47,6 +46,7 @@ def train_ddqn(n_games, n_agents):
             reward,
             done,
             info,
+            actions,
             ddqn_agents,
             custom={"epsilon": ddqn_agents.epsilon},
         )
@@ -54,5 +54,5 @@ def train_ddqn(n_games, n_agents):
     env.close()
 
 
-if __name__ == "__main__":
-    train_ddqn(n_games=N_GAMES, n_agents=2)
+# if __name__ == "__main__":
+#     train_ddqn(n_games=N_GAMES, n_agents=1)

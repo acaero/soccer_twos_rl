@@ -1,19 +1,62 @@
 import numpy as np
 import json
 from src.config import REWARD_SHAPING
+import math
 
 
 def shape_rewards(info, player_id):
     if not REWARD_SHAPING:
         return 0
 
+    extra_reward = 0
+
     player_pos = np.array(info[player_id]["player_info"]["position"])
     ball_pos = np.array(info[player_id]["ball_info"]["position"])
     distance = np.linalg.norm(player_pos - ball_pos)
 
-    print(distance)
+    # Normalize the distance
+    normalized_distance = min(distance / 15, 1.0)
 
-    return -distance
+    # Calculate the proximity reward using an exponential function
+    proximity_reward = np.exp(-3 * normalized_distance) / 4
+
+    # Add this to your existing reward
+    extra_reward += proximity_reward
+
+    # Calculate the angle reward based on the angle between the player's forward vector and the direction to the ball
+    direction_to_target = ball_pos - player_pos
+    distance_to_target = np.linalg.norm(direction_to_target)
+    direction_to_target /= distance_to_target
+    player_rotation_y = info[player_id]["player_info"]["rotation_y"]
+    player_forward_vector = vector_from_angle_custom(player_rotation_y)
+    angle_to_target = calculate_angle_between_vectors(
+        player_forward_vector, direction_to_target
+    )
+
+    angle_reward = np.exp(-3 * angle_to_target / 180) / 4
+
+    # Add this to your existing reward
+    extra_reward += angle_reward
+
+    return extra_reward
+
+
+def vector_from_angle_custom(angle_degrees):
+    angle_radians = math.radians(angle_degrees)
+    x = math.sin(angle_radians)
+    y = math.cos(angle_radians)
+    return (x, y)
+
+
+def calculate_angle_between_vectors(v1, v2):
+    x1, y1 = v1
+    x2, y2 = v2
+    dot_product = x1 * x2 + y1 * y2
+    magnitude_v1 = math.sqrt(x1**2 + y1**2)
+    magnitude_v2 = math.sqrt(x2**2 + y2**2)
+    cos_theta = dot_product / (magnitude_v1 * magnitude_v2)
+    angle = math.degrees(math.acos(cos_theta))
+    return angle
 
 
 def convert_arrays_to_lists(d):

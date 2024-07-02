@@ -3,7 +3,7 @@ from src.config import N_GAMES
 import soccer_twos
 from src.logger import CustomLogger
 from tqdm import tqdm
-from src.agents.maddpg_agent import MADDPGAgent
+from src.agents.maddpg_agent import MADDPGAgents
 
 
 def train_maddpg(
@@ -16,7 +16,7 @@ def train_maddpg(
     for i in range(n_agents):
         agent_indices.append(i)
 
-    maddpg_agent = MADDPGAgent(n_agents, 336, 3)
+    maddpg_agent = MADDPGAgents(n_agents, 336, 3)
     logger = CustomLogger("maddpg")
     # Collect initial experiences
     initial_experiences = 1000
@@ -75,11 +75,11 @@ def train_maddpg(
             obs = next_obs
 
         logger.write_logs_and_tensorboard(
-            i, scores, next_obs, reward, done, info, maddpg_agent
+            i, scores, next_obs, reward, done, info, actions, maddpg_agent
         )
 
     env.close()
 
 
 if __name__ == "__main__":
-    train_maddpg(n_games=N_GAMES, n_agents=2)
+    train_maddpg(n_games=N_GAMES, n_agents=1)

@@ -38,9 +38,8 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         self.fc1 = nn.Linear(state_size, 512)
         self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, 64)
-        self.fc5 = nn.Linear(
+        self.fc3 = nn.Linear(256, 64)
+        self.fc4 = nn.Linear(
             64, action_size * 3
         )  # 3 actions, each with 3 possibilities
 
@@ -48,9 +47,8 @@ class Actor(nn.Module):
         x = torch.relu(self.fc1(state))
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
-        x = torch.relu(self.fc4(x))
         return torch.softmax(
-            self.fc5(x).view(-1, 3, 3), dim=2
+            self.fc4(x).view(-1, 3, 3), dim=2
         )  # Apply softmax to each group of 3
 
 
@@ -58,14 +56,12 @@ class Critic(nn.Module):
     def __init__(self, state_size, action_size, num_agents):
         super(Critic, self).__init__()
         self.fc1 = nn.Linear(
-            state_size * num_agents + action_size * 3 * num_agents, 2048
+            state_size * num_agents + action_size * 3 * num_agents, 1024 * num_agents
         )
-        self.fc2 = nn.Linear(2048, 1024)
-        self.fc3 = nn.Linear(1024, 512)
-        self.fc4 = nn.Linear(512, 256)
-        self.fc5 = nn.Linear(256, 128)
-        self.fc6 = nn.Linear(128, 64)
-        self.fc7 = nn.Linear(64, 1)
+        self.fc2 = nn.Linear(1024 * num_agents, 512)
+        self.fc3 = nn.Linear(512, 256)
+        self.fc4 = nn.Linear(256, 64)
+        self.fc5 = nn.Linear(64, 1)
 
     def forward(self, states, actions):
         x = torch.cat([states, actions * 3], dim=1)
@@ -73,22 +69,20 @@ class Critic(nn.Module):
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
         x = torch.relu(self.fc4(x))
-        x = torch.relu(self.fc5(x))
-        x = torch.relu(self.fc6(x))
-        return self.fc7(x)
+        return self.fc5(x)
 
 
-class MADDPGAgent:
+class MADDPGAgents:
     def __init__(
         self,
         num_agents,
         state_size,
         action_size,
-        lr_actor=0.001,
-        lr_critic=0.001,
+        lr_actor=0.002,
+        lr_critic=0.002,
         gamma=0.99,
         tau=1e-3,
-        buffer_size=1000,
+        buffer_size=10240,
         batch_size=1024,
     ):
         self.num_agents = num_agents

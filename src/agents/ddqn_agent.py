@@ -11,9 +11,8 @@ class QNetwork(nn.Module):
         super(QNetwork, self).__init__()
         self.fc1 = nn.Linear(state_size, 512)
         self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, 64)
-        self.fc5 = nn.Linear(
+        self.fc3 = nn.Linear(256, 64)
+        self.fc4 = nn.Linear(
             64, action_size * 3
         )  # 3 options for each of the 3 dimensions
 
@@ -21,8 +20,7 @@ class QNetwork(nn.Module):
         x = torch.relu(self.fc1(state))
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
-        x = torch.relu(self.fc4(x))
-        return self.fc5(x).view(
+        return self.fc4(x).view(
             -1, 3, 3
         )  # Reshape to (batch_size, 3 dimensions, 3 options)
 
@@ -38,8 +36,8 @@ class DDQNAgents:
         epsilon_start=1.0,
         epsilon_min=0.01,
         epsilon_decay=0.99,
-        batch_size=128,
-        buffer_size=10000,
+        batch_size=1024,
+        buffer_size=10240,
         tau=1e-3,
     ):
 
@@ -115,8 +113,8 @@ class DDQNAgent:
         epsilon_start=1.0,
         epsilon_min=0.01,
         epsilon_decay=0.99,
-        batch_size=128,
-        buffer_size=10000,
+        batch_size=1024,
+        buffer_size=10240,
         tau=1e-3,
     ):
         self.state_size = state_size
@@ -190,6 +188,8 @@ class DDQNAgent:
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+
+        return loss.item()
 
     def soft_update(self, local_model, target_model, tau):
         for target_param, local_param in zip(

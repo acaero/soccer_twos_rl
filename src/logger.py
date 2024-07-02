@@ -41,7 +41,16 @@ class CustomLogger:
         self._logger.addHandler(file_handler)
 
     def write_logs_and_tensorboard(
-        self, iteration, scores, obs, reward, done, info, agent, custom={"action": None}
+        self,
+        iteration,
+        scores,
+        obs,
+        reward,
+        done,
+        info,
+        actions,
+        agent,
+        custom={"": None},
     ):
 
         avg_score = np.mean(
@@ -60,10 +69,11 @@ class CustomLogger:
             extra={
                 "custom_fields": {
                     "episode": iteration,
-                    "scores": scores,
+                    "scores": str(convert_arrays_to_lists(scores)),
                     "reward": str(convert_arrays_to_lists(reward)),
                     "done": str(convert_arrays_to_lists(done)),
                     "info": str(convert_arrays_to_lists(info)),
+                    "actions": str(convert_arrays_to_lists(actions)),
                     "observations": str(convert_arrays_to_lists(obs)),
                     **custom,
                 }
