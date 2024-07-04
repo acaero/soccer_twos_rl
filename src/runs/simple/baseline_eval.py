@@ -9,7 +9,7 @@ from src.config import N_GAMES
 
 
 def train_baseline(n_games, n_agents):
-    env = soccer_twos.make(worker_id=random.randint(0, 100))
+    env = soccer_twos.make(render=True)
     agent = BaselineAgent(n_agents)
     logger = CustomLogger("baseline")
     actions = {
@@ -24,14 +24,11 @@ def train_baseline(n_games, n_agents):
         done = False
         scores = {0: 0, 1: 0, 2: 0, 3: 0}
         while not done:
-            actions = {}
-            for player_id in range(4):
-                player_info = info[player_id]["player_info"]
-                ball_info = info[0]["ball_info"]
-                target_pos = agent.defend_and_attack(
-                    ball_info["position"], player_id, player_info["position"]
-                )
-                actions[player_id] = agent.move_to_point(player_info, target_pos)
+            actions = {
+                player_id: agent.act(info, player_id) for player_id in range(n_agents)
+            }
+            for j in range(n_agents, 4):
+                actions[j] = [0, 0, 0]
             next_obs, reward, done, info = env.step(actions)
             done = done["__all__"]
             for player_id in range(4):
@@ -44,7 +41,7 @@ def train_baseline(n_games, n_agents):
 
 
 def train_random(n_games, n_agents):
-    env = soccer_twos.make(worker_id=random.randint(0, 100))
+    env = soccer_twos.make()
     agent = RandomAgent(n_agents)
     logger = CustomLogger("random")
     for i in tqdm(range(n_games)):
@@ -53,8 +50,10 @@ def train_random(n_games, n_agents):
         scores = {0: 0, 1: 0, 2: 0, 3: 0}
         while not done:
             actions = {
-                player_id: agent.act(obs[player_id])[0] for player_id in range(4)
+                player_id: agent.act(obs[player_id])[0] for player_id in range(n_agents)
             }
+            for j in range(n_agents, 4):
+                actions[j] = [0, 0, 0]
             next_obs, reward, done, info = env.step(actions)
             done = done["__all__"]
             for player_id in range(4):
@@ -67,5 +66,5 @@ def train_random(n_games, n_agents):
 
 
 if __name__ == "__main__":
-    # train_baseline(n_games=N_GAMES, n_agents=1)
-    train_random(n_games=N_GAMES, n_agents=1)
+    train_baseline(n_games=N_GAMES, n_agents=1)
+    # train_random(n_games=N_GAMES, n_agents=1)

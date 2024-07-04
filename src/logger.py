@@ -59,7 +59,9 @@ class CustomLogger:
         # Log metrics to TensorBoard
         # TODO: Add more metrics to TensorBoard
         for i in range(len(scores)):
-            self.writer.add_scalar(f"Score of {i} agent", scores[i], iteration)
+            self.writer.add_scalar(f"Score of agent {i}", scores[i], iteration)
+            self.writer.add_scalar(f"Reward of agent {i}", scores[i], iteration)
+
         self.writer.add_scalar(
             f"Average Score of first {agent.num_agents} agent/s", avg_score, iteration
         )

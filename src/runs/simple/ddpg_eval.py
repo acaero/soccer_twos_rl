@@ -3,18 +3,14 @@ from src.utils import shape_rewards
 from tqdm import tqdm
 import soccer_twos
 from src.config import N_GAMES
-from src.agents.ddpg_agent import DDPGAgents
+from src.agents.ddpg_agent import DDPGAgent
 from src.logger import CustomLogger
 
 
 def train_ddpg(n_games, n_agents):
-    env = soccer_twos.make(worker_id=random.randint(0, 100))
+    env = soccer_twos.make(render=True)
 
-    agent_indices = []
-    for i in range(n_agents):
-        agent_indices.append(i)
-
-    ddpg_agents = DDPGAgents(n_agents, 336, 3)
+    ddpg_agent = DDPGAgent(336, 3)
 
     logger = CustomLogger("ddpg")
 
@@ -24,8 +20,10 @@ def train_ddpg(n_games, n_agents):
         scores = {}
         while not done:
 
-            actions = ddpg_agents.act({i: obs[i] for i in agent_indices})
-            for j in range(len(agent_indices), 4):
+            actions = {}
+            for j in range(4):
+                if j <= n_agents:
+                    actions[j] = ddpg_agent.act(obs[j])
                 actions[j] = [0, 0, 0]
 
             next_obs, reward, done, info = env.step(actions)
@@ -34,13 +32,13 @@ def train_ddpg(n_games, n_agents):
             for agent_id in range(4):
                 scores[agent_id] = reward[agent_id] + shape_rewards(info, int(agent_id))
 
-            ddpg_agents.remember(obs, actions, scores, next_obs, done)
-            ddpg_agents.replay()
+            ddpg_agent.remember(obs[0], actions[0], scores[0], next_obs[0], done)
+            ddpg_agent.replay()
 
             obs = next_obs
 
         logger.write_logs_and_tensorboard(
-            i, scores, next_obs, reward, done, info, actions, ddpg_agents
+            i, scores, next_obs, reward, done, info, actions, ddpg_agent
         )
 
     env.close()

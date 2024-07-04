@@ -8,6 +8,7 @@ import random
 class Actor(nn.Module):
     def __init__(self, state_size, action_size):
         super(Actor, self).__init__()
+
         self.fc1 = nn.Linear(state_size, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 64)
@@ -42,84 +43,6 @@ class Critic(nn.Module):
         return self.fc5(x)
 
 
-class DDPGAgents:
-    def __init__(
-        self,
-        num_agents,
-        state_size,
-        action_size,
-        learning_rate=0.002,
-        gamma=0.99,
-        batch_size=1024,
-        memory_buffer=10240,
-        tau=1e-3,
-    ):
-        self.num_agents = num_agents
-        self.agents = [
-            DDPGAgent(
-                state_size,
-                action_size,
-                learning_rate,
-                gamma,
-                batch_size,
-                memory_buffer,
-                tau,
-            )
-            for _ in range(num_agents)
-        ]
-
-    def remember(self, state, actions, rewards, next_state, done):
-        [
-            self.agents[i].remember(
-                state[i], actions[i], rewards[i], next_state[i], done
-            )
-            for i in range(len(self.agents))
-        ]
-
-    def act(self, state):
-        actions = {i: self.agents[i].act(state[i]) for i in range(self.num_agents)}
-        return actions
-
-    def replay(self):
-        [agent.replay() for agent in self.agents]
-
-    def save(self, filename):
-        checkpoint = {}
-        for i, agent in enumerate(self.agents):
-            checkpoint[f"agent_{i}"] = {
-                "actor_local_state_dict": agent.actor_local.state_dict(),
-                "actor_target_state_dict": agent.actor_target.state_dict(),
-                "critic_local_state_dict": agent.critic_local.state_dict(),
-                "critic_target_state_dict": agent.critic_target.state_dict(),
-                "actor_optimizer_state_dict": agent.actor_optimizer.state_dict(),
-                "critic_optimizer_state_dict": agent.critic_optimizer.state_dict(),
-            }
-        torch.save(checkpoint, filename)
-
-    def load(self, filename):
-        checkpoint = torch.load(filename)
-        for i, agent in enumerate(self.agents):
-            agent_checkpoint = checkpoint[f"agent_{i}"]
-            agent.actor_local.load_state_dict(
-                agent_checkpoint["actor_local_state_dict"]
-            )
-            agent.actor_target.load_state_dict(
-                agent_checkpoint["actor_target_state_dict"]
-            )
-            agent.critic_local.load_state_dict(
-                agent_checkpoint["critic_local_state_dict"]
-            )
-            agent.critic_target.load_state_dict(
-                agent_checkpoint["critic_target_state_dict"]
-            )
-            agent.actor_optimizer.load_state_dict(
-                agent_checkpoint["actor_optimizer_state_dict"]
-            )
-            agent.critic_optimizer.load_state_dict(
-                agent_checkpoint["critic_optimizer_state_dict"]
-            )
-
-
 class DDPGAgent:
     def __init__(
         self,
@@ -131,6 +54,7 @@ class DDPGAgent:
         memory_buffer=10240,
         tau=1e-3,
     ):
+        self.num_agents = 1
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
