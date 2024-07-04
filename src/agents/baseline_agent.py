@@ -6,6 +6,14 @@ class BaselineAgent:
     def __init__(self, num_agents=1):
         self.num_agents = num_agents
 
+    def act(self, info, player_id):
+        player_info = info[player_id]["player_info"]
+        ball_info = info[0]["ball_info"]
+        target_pos = self.defend_and_attack(
+            ball_info["position"], player_id, player_info["position"]
+        )
+        return self.move_to_point(player_info, target_pos)
+
     def determine_rotation_direction(self, v1, v2):
         x1, y1 = v1
         x2, y2 = v2

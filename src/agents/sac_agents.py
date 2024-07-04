@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.distributions import Normal
-import numpy as np
+import math
 
 
 class Actor(nn.Module):
@@ -68,15 +67,18 @@ class SACAgent:
 
         self.critic1_target.load_state_dict(self.critic1.state_dict())
         self.critic2_target.load_state_dict(self.critic2.state_dict())
+        self.num_agents = 1
 
         self.gamma = gamma
         self.tau = tau
-        self.alpha = alpha
+
+        # Automatic temperature adjustment
+        self.target_entropy = -action_size  # Heuristic value
+        self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+        self.alpha = self.log_alpha.exp()
+        self.alpha_optimizer = optim.Adam([self.log_alpha], lr=learning_rate)
 
     def update(self, states, actions, rewards, next_states, dones):
-        if len(states) == 0:
-            return
-
         states = torch.FloatTensor(states).to(self.device)
         actions = torch.LongTensor(actions).to(self.device)
         rewards = torch.FloatTensor(rewards).unsqueeze(1).to(self.device)
@@ -121,12 +123,23 @@ class SACAgent:
         q2 = self.critic2(states, action_probs)
         min_q = torch.min(q1, q2)
 
-        actor_loss = (self.alpha * action_log_probs - min_q).mean()
+        # Calculate the entropy term
+        entropy = -torch.sum(action_probs * action_log_probs, dim=(1, 2)).unsqueeze(1)
+
+        # Calculate the actor loss
+        actor_loss = (self.alpha.detach() * entropy - min_q).mean()
 
         # Update actor
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
         self.actor_optimizer.step()
+
+        # Adjust temperature
+        alpha_loss = -(self.log_alpha * (entropy.detach() + self.target_entropy)).mean()
+        self.alpha_optimizer.zero_grad()
+        alpha_loss.backward()
+        self.alpha_optimizer.step()
+        self.alpha = self.log_alpha.exp()
 
         # Update target networks
         self.soft_update(self.critic1, self.critic1_target)
@@ -157,6 +170,8 @@ class SACAgent:
                 "actor_optimizer_state_dict": self.actor_optimizer.state_dict(),
                 "critic1_optimizer_state_dict": self.critic1_optimizer.state_dict(),
                 "critic2_optimizer_state_dict": self.critic2_optimizer.state_dict(),
+                "log_alpha": self.log_alpha,
+                "alpha_optimizer_state_dict": self.alpha_optimizer.state_dict(),
             },
             filename,
         )
@@ -173,60 +188,6 @@ class SACAgent:
         self.critic2_optimizer.load_state_dict(
             checkpoint["critic2_optimizer_state_dict"]
         )
-
-
-class SACAgents:
-    def __init__(
-        self,
-        num_agents,
-        state_size,
-        action_size,
-        learning_rate=0.002,
-        gamma=0.99,
-        tau=1e-3,
-        alpha=0.2,
-    ):
-        self.num_agents = num_agents
-        self.agents = [
-            SACAgent(state_size, action_size, learning_rate, gamma, tau, alpha)
-            for _ in range(num_agents)
-        ]
-
-    def act(self, states):
-        return {i: self.agents[i].act(states[i]) for i in range(self.num_agents)}
-
-    def update(self, states, actions, rewards, next_states, dones):
-        for i in range(self.num_agents):
-            self.agents[i].update(
-                states[i], actions[i], rewards[i], next_states[i], dones
-            )
-
-    def save(self, filename):
-        checkpoint = {}
-        for i, agent in enumerate(self.agents):
-            checkpoint[f"agent_{i}"] = {
-                "actor_state_dict": agent.actor.state_dict(),
-                "critic1_state_dict": agent.critic1.state_dict(),
-                "critic2_state_dict": agent.critic2.state_dict(),
-                "actor_optimizer_state_dict": agent.actor_optimizer.state_dict(),
-                "critic1_optimizer_state_dict": agent.critic1_optimizer.state_dict(),
-                "critic2_optimizer_state_dict": agent.critic2_optimizer.state_dict(),
-            }
-        torch.save(checkpoint, filename)
-
-    def load(self, filename):
-        checkpoint = torch.load(filename)
-        for i, agent in enumerate(self.agents):
-            agent_checkpoint = checkpoint[f"agent_{i}"]
-            agent.actor.load_state_dict(agent_checkpoint["actor_state_dict"])
-            agent.critic1.load_state_dict(agent_checkpoint["critic1_state_dict"])
-            agent.critic2.load_state_dict(agent_checkpoint["critic2_state_dict"])
-            agent.actor_optimizer.load_state_dict(
-                agent_checkpoint["actor_optimizer_state_dict"]
-            )
-            agent.critic1_optimizer.load_state_dict(
-                agent_checkpoint["critic1_optimizer_state_dict"]
-            )
-            agent.critic2_optimizer.load_state_dict(
-                agent_checkpoint["critic2_optimizer_state_dict"]
-            )
+        self.log_alpha = checkpoint["log_alpha"]
+        self.alpha = self.log_alpha.exp()
+        self.alpha_optimizer.load_state_dict(checkpoint["alpha_optimizer_state_dict"])
