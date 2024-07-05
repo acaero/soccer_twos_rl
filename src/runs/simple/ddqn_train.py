@@ -3,16 +3,16 @@ from src.utils import shape_rewards
 from tqdm import tqdm
 import soccer_twos
 from src.config import N_GAMES
-from src.agents.ddpg_agent import DDPGAgent
+from src.agents.ddqn_agent import DDQNAgent
 from src.logger import CustomLogger
 
 
-def train_ddpg(n_games, n_agents):
-    env = soccer_twos.make(render=True)
+def train_ddqn(n_games, n_agents):
+    env = soccer_twos.make()
 
-    ddpg_agent = DDPGAgent(336, 3)
+    ddqn_agent = DDQNAgent(336, 3)
 
-    logger = CustomLogger("ddpg")
+    logger = CustomLogger("ddqn")
 
     for i in tqdm(range(n_games)):
         obs = env.reset()
@@ -22,9 +22,9 @@ def train_ddpg(n_games, n_agents):
 
             actions = {}
             for j in range(4):
-                if j <= n_agents:
-                    actions[j] = ddpg_agent.act(obs[j])
                 actions[j] = [0, 0, 0]
+                if j < n_agents:
+                    actions[j] = ddqn_agent.act(obs[j])
 
             next_obs, reward, done, info = env.step(actions)
             done = done["__all__"]
@@ -32,17 +32,25 @@ def train_ddpg(n_games, n_agents):
             for agent_id in range(4):
                 scores[agent_id] = reward[agent_id] + shape_rewards(info, int(agent_id))
 
-            ddpg_agent.remember(obs[0], actions[0], scores[0], next_obs[0], done)
-            ddpg_agent.replay()
+            ddqn_agent.remember(obs[0], actions[0], scores[0], next_obs[0], done)
+            ddqn_agent.replay()
 
             obs = next_obs
 
         logger.write_logs_and_tensorboard(
-            i, scores, next_obs, reward, done, info, actions, ddpg_agent
+            i,
+            scores,
+            next_obs,
+            reward,
+            done,
+            info,
+            actions,
+            ddqn_agent,
+            custom={"epsilon": ddqn_agent.epsilon},
         )
 
     env.close()
 
 
-# if __name__ == "__main__":
-#     train_ddpg(n_games=N_GAMES, n_agents=1)
+if __name__ == "__main__":
+    train_ddqn(n_games=N_GAMES, n_agents=1)

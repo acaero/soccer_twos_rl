@@ -1,7 +1,7 @@
 import random
 from tqdm import tqdm
 import soccer_twos
-from src.agents.sac_agents import SACAgent
+from src.agents.sac_agent import SACAgent
 from src.utils import shape_rewards
 from src.config import N_GAMES
 from src.logger import CustomLogger
@@ -9,7 +9,7 @@ import numpy as np
 
 
 def train_sac(n_games, n_agents, batch_size=64):
-    env = soccer_twos.make(render=True)
+    env = soccer_twos.make()
     sac_agents = SACAgent(336, 3)
     logger = CustomLogger("sac")
 
@@ -26,10 +26,9 @@ def train_sac(n_games, n_agents, batch_size=64):
         while not done:
             actions = {}
             for j in range(4):
+                actions[j] = [0, 0, 0]
                 if j < n_agents:
                     actions[j] = sac_agents.act(obs[j])
-                else:
-                    actions[j] = [0, 0, 0]
 
             next_obs, reward, done, info = env.step(actions)
             done = done["__all__"]
@@ -78,5 +77,5 @@ def train_sac(n_games, n_agents, batch_size=64):
     env.close()
 
 
-# if __name__ == "__main__":
-#     train_sac(n_games=N_GAMES, n_agents=1)
+if __name__ == "__main__":
+    train_sac(n_games=N_GAMES, n_agents=1, batch_size=128)

@@ -10,7 +10,7 @@ import torch
 
 
 def train_ppo(n_games, n_agents, batch_size=64):
-    env = soccer_twos.make(render=True)
+    env = soccer_twos.make()
     ppo_agents = PPOAgent(336, 3)
     logger = CustomLogger("ppo")
 
@@ -27,6 +27,7 @@ def train_ppo(n_games, n_agents, batch_size=64):
         while not done:
             env_actions = {}
             for j in range(4):
+                env_actions[j] = [0, 0, 0]
                 if j < n_agents:
                     actions, action_probs = ppo_agents.act(obs[j])
                     env_actions[j] = actions
@@ -34,15 +35,12 @@ def train_ppo(n_games, n_agents, batch_size=64):
                     episode_states.append(obs[j])
                     episode_actions.append(actions)
                     episode_probs.append(action_probs)
-                else:
-                    # Default action for non-agent players
-                    env_actions[j] = [0, 0, 0]
 
             next_obs, reward, done, info = env.step(env_actions)
             done = done["__all__"]
 
             for agent_id in range(4):
-                shaped_reward = reward[agent_id] + shape_rewards(info, int(agent_id))
+                shaped_reward = shape_rewards(info, int(agent_id))
                 scores[agent_id] = shaped_reward
                 if agent_id < n_agents:
                     episode_rewards.append(shaped_reward)
@@ -82,5 +80,5 @@ def train_ppo(n_games, n_agents, batch_size=64):
     env.close()
 
 
-# if __name__ == "__main__":
-#     train_ppo(n_games=N_GAMES, n_agents=1, batch_size=1024)
+if __name__ == "__main__":
+    train_ppo(n_games=N_GAMES, n_agents=1, batch_size=4)

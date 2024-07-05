@@ -13,30 +13,30 @@ def shape_rewards(info, player_id):
     player_pos = np.array(info[player_id]["player_info"]["position"])
     ball_pos = np.array(info[player_id]["ball_info"]["position"])
     distance = np.linalg.norm(player_pos - ball_pos)
-
     # Normalize the distance
-    normalized_distance = min(distance / 15, 1.0)
+    normalized_distance = 1 - distance / 16.5
+    print("distance: ", distance)
 
     # Calculate the proximity reward using an exponential function
-    proximity_reward = np.exp(-3 * normalized_distance) / 4
-
+    proximity_reward = normalized_distance
+    print("reward: ", normalized_distance)
     # Add this to your existing reward
     extra_reward += proximity_reward
 
     # Calculate the angle reward based on the angle between the player's forward vector and the direction to the ball
-    direction_to_target = ball_pos - player_pos
-    distance_to_target = np.linalg.norm(direction_to_target)
-    direction_to_target /= distance_to_target
-    player_rotation_y = info[player_id]["player_info"]["rotation_y"]
-    player_forward_vector = vector_from_angle_custom(player_rotation_y)
-    angle_to_target = calculate_angle_between_vectors(
-        player_forward_vector, direction_to_target
-    )
+    # direction_to_target = ball_pos - player_pos
+    # distance_to_target = np.linalg.norm(direction_to_target)
+    # direction_to_target /= distance_to_target
+    # player_rotation_y = info[player_id]["player_info"]["rotation_y"]
+    # player_forward_vector = vector_from_angle_custom(player_rotation_y)
+    # angle_to_target = calculate_angle_between_vectors(
+    #     player_forward_vector, direction_to_target
+    # )
 
-    angle_reward = np.exp(-3 * angle_to_target / 180) / 4
+    # angle_reward = np.exp(-3 * angle_to_target / 180) / 4
 
-    # Add this to your existing reward
-    extra_reward += angle_reward
+    # # Add this to your existing reward
+    # extra_reward += angle_reward
 
     return extra_reward
 
