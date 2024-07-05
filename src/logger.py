@@ -10,7 +10,7 @@ import numpy as np
 
 
 class CustomLogger:
-    def __init__(self, name="Please Set Name"):
+    def __init__(self, name="Please Set Name", run_name: str = "default"):
 
         self.name = name
 
@@ -20,7 +20,7 @@ class CustomLogger:
         self.checkpoint_dir = Path(CHECKPOINT_DIR)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-        self.tensorboard_log_dir = Path(LOG_DIR) / "tensorboard"
+        self.tensorboard_log_dir = Path(LOG_DIR) / "tensorboard" / run_name
         self.tensorboard_log_dir.mkdir(parents=True, exist_ok=True)
 
         self.plain_log_dir = Path(LOG_DIR) / "plain"

@@ -11,7 +11,7 @@ from src.config import N_GAMES
 def train_baseline(n_games, n_agents):
     env = soccer_twos.make(render=True)
     agent = BaselineAgent(n_agents)
-    logger = CustomLogger("baseline")
+    logger = CustomLogger("baseline", run_name="baseline_v1")
     actions = {
         0: [0, 0, 0],
         1: [0, 0, 0],

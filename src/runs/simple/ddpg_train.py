@@ -12,7 +12,7 @@ def train_ddpg(n_games, n_agents):
 
     ddpg_agent = DDPGAgent(336, 3)
 
-    logger = CustomLogger("ddpg")
+    logger = CustomLogger("ddpg", run_name="ddpq_v1")
 
     for i in tqdm(range(n_games)):
         obs = env.reset()

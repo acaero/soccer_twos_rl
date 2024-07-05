@@ -17,7 +17,7 @@ def train_maddpg(
         agent_indices.append(i)
 
     maddpg_agent = MADDPGAgents(n_agents, 336, 3)
-    logger = CustomLogger("maddpg")
+    logger = CustomLogger("maddpg", run_name="maddpg_v1")
     # Collect initial experiences
     initial_experiences = 1000
     experiences_count = 0

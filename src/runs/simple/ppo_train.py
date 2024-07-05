@@ -12,7 +12,7 @@ import torch
 def train_ppo(n_games, n_agents, batch_size=64):
     env = soccer_twos.make()
     ppo_agents = PPOAgent(336, 3)
-    logger = CustomLogger("ppo")
+    logger = CustomLogger("ppo", run_name="ppo_v1")
 
     for i in tqdm(range(n_games)):
         obs = env.reset()

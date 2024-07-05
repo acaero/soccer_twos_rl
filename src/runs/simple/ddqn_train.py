@@ -12,7 +12,7 @@ def train_ddqn(n_games, n_agents):
 
     ddqn_agent = DDQNAgent(336, 3)
 
-    logger = CustomLogger("ddqn")
+    logger = CustomLogger("ddqn", run_name="ddqn_v1")
 
     for i in tqdm(range(n_games)):
         obs = env.reset()
