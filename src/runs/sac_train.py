@@ -11,7 +11,7 @@ import numpy as np
 def train_sac(n_games, n_agents, batch_size=64):
     env = soccer_twos.make()
     sac_agents = SACAgent(336, 3)
-    logger = CustomLogger("sac")
+    logger = CustomLogger("sac", run_name="sac_v3_single")
 
     for i in tqdm(range(n_games)):
         obs = env.reset()

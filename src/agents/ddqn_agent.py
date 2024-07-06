@@ -38,13 +38,12 @@ class DDQNAgent:
         epsilon_decay=0.99,
         batch_size=1024,
         buffer_size=10240,
-        tau=1e-3,
+        update_frequency=100,
     ):
         self.num_agents = 1
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        torch.set_default_device(self.device)
 
         self.qnetwork_local = QNetwork(state_size, action_size).to(self.device)
         self.qnetwork_target = QNetwork(state_size, action_size).to(self.device)
@@ -57,14 +56,14 @@ class DDQNAgent:
         self.memory = []
         self.buffer_size = buffer_size
         self.batch_size = batch_size
-        self.tau = tau
+        self.update_frequency = update_frequency
+        self.steps = 0
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
         if len(self.memory) > self.buffer_size:
             self.memory.pop(0)
 
-    # update both q networks only after all batches
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return np.random.choice([0, 1, 2], 3).tolist()
@@ -75,7 +74,7 @@ class DDQNAgent:
             q_values = self.qnetwork_local(state)
         self.qnetwork_local.train()
 
-        actions = q_values.max(2)[1].squeeze().tolist()
+        actions = q_values.max(2)[1].squeeze().cpu().numpy().tolist()
         return actions
 
     def replay(self):
@@ -109,20 +108,17 @@ class DDQNAgent:
         loss.backward()
         self.optimizer.step()
 
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)
+        self.steps += 1
+        if self.steps % self.update_frequency == 0:
+            self.hard_update(self.qnetwork_local, self.qnetwork_target)
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
         return loss.item()
 
-    def soft_update(self, local_model, target_model, tau):
-        for target_param, local_param in zip(
-            target_model.parameters(), local_model.parameters()
-        ):
-            target_param.data.copy_(
-                tau * local_param.data + (1.0 - tau) * target_param.data
-            )
+    def hard_update(self, local_model, target_model):
+        target_model.load_state_dict(local_model.state_dict())
 
     def save(self, filename):
         torch.save(
@@ -136,7 +132,7 @@ class DDQNAgent:
         )
 
     def load(self, filename):
-        checkpoint = torch.load(filename)
+        checkpoint = torch.load(filename, map_location=self.device)
         self.qnetwork_local.load_state_dict(checkpoint["qnetwork_local_state_dict"])
         self.qnetwork_target.load_state_dict(checkpoint["qnetwork_target_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])

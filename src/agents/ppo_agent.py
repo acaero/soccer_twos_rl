@@ -45,14 +45,14 @@ class PPOAgent:
         action_size,
         learning_rate=0.002,
         gamma=0.99,
-        epsilon=0.2,
+        clip_size=0.2,
         epochs=10,
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.actor_critic = ActorCritic(state_size, action_size).to(self.device)
         self.optimizer = optim.Adam(self.actor_critic.parameters(), lr=learning_rate)
         self.gamma = gamma
-        self.epsilon = epsilon
+        self.epsilon = clip_size
         self.epochs = epochs
         self.action_size = action_size
         self.num_agents = 1
@@ -91,6 +91,7 @@ class PPOAgent:
             old_probs_reshaped = old_probs.view(-1)
 
             advantages = rewards - state_values.squeeze(-1).detach()
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
             ratio = torch.exp(new_probs - torch.log(old_probs_reshaped))
 
@@ -104,7 +105,8 @@ class PPOAgent:
             actor_loss = -torch.min(surr1, surr2).mean()
             critic_loss = F.mse_loss(state_values.squeeze(-1), rewards)
 
-            loss = actor_loss + 0.5 * critic_loss
+            ce_loss = F.cross_entropy(action_probs.view(-1, 3), actions.view(-1))
+            loss = actor_loss + 0.5 * critic_loss + 0.01 * ce_loss
 
             self.optimizer.zero_grad()
             loss.backward()

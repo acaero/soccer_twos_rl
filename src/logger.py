@@ -13,6 +13,7 @@ class CustomLogger:
     def __init__(self, name="Please Set Name", run_name: str = "default"):
 
         self.name = name
+        self.run_name = run_name
 
         self._logger = logging.getLogger()
         self._logger.setLevel(logging.INFO)
@@ -97,21 +98,23 @@ class CustomLogger:
 
             # Save the new best model
             best_model_path = (
-                self.checkpoint_dir / f"best_model_{self.name}_{iteration}.pth"
+                self.checkpoint_dir
+                / f"best_model_{self.name}_{iteration}_{self.run_name}.pth"
             )
             agent.save(best_model_path)
 
         self.scores.append(avg_score)
 
         # Save model checkpoint every 10 episodes
-        if iteration % 10 == 0:
+        if iteration % 500 == 0:
             # Print the custom fields as well
             custom_str = ", ".join(f"{key}: {value}" for key, value in custom.items())
             print(
                 f"Episode: {iteration}, Average Score of first {agent.num_agents} agents: {avg_score:.2f}, Name: {self.name}, {custom_str}"
             )
             checkpoint_filename = (
-                self.checkpoint_dir / f"checkpoint_{self.name}_{iteration}.pth"
+                self.checkpoint_dir
+                / f"checkpoint_{self.name}_{iteration}_{self.run_name}.pth"
             )
             agent.save(checkpoint_filename)
 
