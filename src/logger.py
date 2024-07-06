@@ -11,7 +11,6 @@ import numpy as np
 
 class CustomLogger:
     def __init__(self, name="Please Set Name", run_name: str = "default"):
-
         self.name = name
         self.run_name = run_name
 
@@ -30,15 +29,12 @@ class CustomLogger:
         self.writer = SummaryWriter(log_dir=self.tensorboard_log_dir)
         self.scores = []
 
-        # Create a file handler that logs even debug messages
         log_path = Path(self.plain_log_dir) / "logs.json"
         file_handler = logging.FileHandler(log_path)
 
-        # Create and set the custom JSON formatter
         formatter = JSONFormatter()
         file_handler.setFormatter(formatter)
 
-        # Add the handler to the logger
         self._logger.addHandler(file_handler)
 
     def write_logs_and_tensorboard(
@@ -53,15 +49,24 @@ class CustomLogger:
         agent,
         custom={"": None},
     ):
+        # Check if we're dealing with multi-environment or single-environment case
+        multi_env = isinstance(scores[0], (np.ndarray, list))
 
-        avg_score = np.mean(
-            [score for i, score in enumerate(scores.values()) if i < agent.num_agents]
-        )
+        if multi_env:
+            avg_scores = {i: np.mean(score) for i, score in scores.items()}
+            avg_score = np.mean(
+                [score for i, score in avg_scores.items() if i < agent.num_agents]
+            )
+        else:
+            avg_scores = scores
+            avg_score = np.mean(
+                [score for i, score in scores.items() if i < agent.num_agents]
+            )
+
         # Log metrics to TensorBoard
-        # TODO: Add more metrics to TensorBoard
-        for i in range(len(scores)):
-            self.writer.add_scalar(f"Score of agent {i}", scores[i], iteration)
-            self.writer.add_scalar(f"Reward of agent {i}", scores[i], iteration)
+        for i in range(len(avg_scores)):
+            self.writer.add_scalar(f"Score of agent {i}", avg_scores[i], iteration)
+            self.writer.add_scalar(f"Reward of agent {i}", avg_scores[i], iteration)
 
         self.writer.add_scalar(
             f"Average Score of first {agent.num_agents} agent/s", avg_score, iteration
@@ -87,7 +92,6 @@ class CustomLogger:
         if not self.scores or max(self.scores) < avg_score:
             self.scores = [avg_score]
             print("new best found at iteration", iteration)
-            # Search for existing best model file and delete it
             best_model_pattern = f"best_model_{self.name}_*.pth"
             existing_best_model_files = list(
                 self.checkpoint_dir.glob(best_model_pattern)
@@ -96,7 +100,6 @@ class CustomLogger:
                 for file in existing_best_model_files:
                     file.unlink()  # Delete existing best model file
 
-            # Save the new best model
             best_model_path = (
                 self.checkpoint_dir
                 / f"best_model_{self.name}_{iteration}_{self.run_name}.pth"
@@ -105,9 +108,8 @@ class CustomLogger:
 
         self.scores.append(avg_score)
 
-        # Save model checkpoint every 10 episodes
+        # Save model checkpoint every 500 episodes
         if iteration % 500 == 0:
-            # Print the custom fields as well
             custom_str = ", ".join(f"{key}: {value}" for key, value in custom.items())
             print(
                 f"Episode: {iteration}, Average Score of first {agent.num_agents} agents: {avg_score:.2f}, Name: {self.name}, {custom_str}"
@@ -121,7 +123,6 @@ class CustomLogger:
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
-        # Use the log record's created time for the timestamp
         timestamp = datetime.fromtimestamp(record.created, timezone.utc).isoformat()
 
         log_record = {
@@ -130,15 +131,12 @@ class JSONFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
 
-        # Include exception info if present
         if record.exc_info:
             log_record["exc_info"] = self.formatException(record.exc_info)
 
-        # Include stack trace if present
         if record.stack_info:
             log_record["stack_info"] = self.formatStack(record.stack_info)
 
-        # Add custom fields if they exist
         if hasattr(record, "custom_fields"):
             log_record.update(record.custom_fields)
 

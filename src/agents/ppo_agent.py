@@ -10,21 +10,17 @@ class ActorCritic(nn.Module):
         super(ActorCritic, self).__init__()
         self.actor = nn.Sequential(
             nn.Linear(state_size, 512),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.Linear(64, action_size * 3),
+            nn.Tanh(),
+            nn.Linear(256, action_size * 3),
         )
         self.critic = nn.Sequential(
             nn.Linear(state_size, 512),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Tanh(),
+            nn.Linear(256, 1),
         )
 
     def forward(self, state):
@@ -43,10 +39,12 @@ class PPOAgent:
         self,
         state_size,
         action_size,
-        learning_rate=0.002,
+        learning_rate=0.0003,
         gamma=0.99,
         clip_size=0.2,
         epochs=10,
+        entropy_multiplier=0.01,
+        gae_lambda=0.95,
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.actor_critic = ActorCritic(state_size, action_size).to(self.device)
@@ -55,6 +53,8 @@ class PPOAgent:
         self.epsilon = clip_size
         self.epochs = epochs
         self.action_size = action_size
+        self.entropy_multiplier = entropy_multiplier
+        self.gae_lambda = gae_lambda
         self.num_agents = 1
 
     def act(self, state):
@@ -66,53 +66,90 @@ class PPOAgent:
         actions = []
         chosen_probs = []
         for probs in action_probs:
+            probs = np.clip(probs, 1e-10, 1.0)  # Clip probabilities to avoid zeros
+            probs /= probs.sum()  # Renormalize
             action = np.random.choice(3, p=probs)
             actions.append(action)
             chosen_probs.append(probs[action])
 
         return np.array(actions).flatten(), np.array(chosen_probs).flatten()
 
-    def update(self, states, actions, old_probs, rewards, dones):
+    def gae(self, rewards, values, dones):
+        advantages = []
+        gae = 0
+        for t in reversed(range(len(rewards))):
+            if t == len(rewards) - 1:
+                next_value = 0  # Assuming episode ends
+            else:
+                next_value = values[t + 1]
 
+            delta = rewards[t] + self.gamma * next_value * (1 - dones[t]) - values[t]
+            gae = delta + self.gamma * self.gae_lambda * (1 - dones[t]) * gae
+            advantages.insert(0, gae)
+
+        return np.array(advantages)
+
+    def update(self, states, actions, old_probs, rewards, dones):
         states = torch.FloatTensor(np.array(states)).to(self.device)
         actions = torch.LongTensor(np.array(actions)).to(self.device)
         old_probs = torch.FloatTensor(np.array(old_probs)).to(self.device)
         rewards = torch.FloatTensor(rewards).to(self.device)
         dones = torch.FloatTensor(dones).to(self.device)
 
+        # Compute values for all states
+        with torch.no_grad():
+            _, values = self.actor_critic(states)
+            values = values.squeeze(-1).cpu().numpy()
+
+        # Compute GAE
+        advantages = self.gae(rewards.cpu().numpy(), values, dones.cpu().numpy())
+        advantages = torch.FloatTensor(advantages).to(self.device)
+
+        # Compute returns
+        returns = advantages + torch.FloatTensor(values).to(self.device)
+
+        # Normalize advantages
+        if len(advantages) > 1:
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
         for _ in range(self.epochs):
             action_probs, state_values = self.actor_critic(states)
-            dist = torch.distributions.Categorical(action_probs.view(-1, 3))
+            action_probs = F.softmax(action_probs.view(-1, 3), dim=-1)
 
-            # Reshape actions to match the distribution
+            if torch.isnan(action_probs).any() or torch.isinf(action_probs).any():
+                print("NaN or Inf detected in action_probs")
+                action_probs = torch.nan_to_num(
+                    action_probs, nan=1e-6, posinf=1 - 1e-6, neginf=1e-6
+                )
+
+            dist = torch.distributions.Categorical(action_probs)
+
             actions_reshaped = actions.view(-1)
-
             new_probs = dist.log_prob(actions_reshaped)
             old_probs_reshaped = old_probs.view(-1)
 
-            advantages = rewards - state_values.squeeze(-1).detach()
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+            ratio = torch.exp(new_probs - old_probs_reshaped)
+            ratio = ratio.view(states.size(0), -1)
+            advantages_expanded = advantages.unsqueeze(1).expand_as(ratio)
 
-            ratio = torch.exp(new_probs - torch.log(old_probs_reshaped))
-
-            # Reshape ratio and advantages to match
-            ratio = ratio.view(states.size(0), -1)  # Should be (64, 3)
-            advantages = advantages.unsqueeze(1).expand_as(ratio)  # Should be (64, 3)
-
-            surr1 = ratio * advantages
-            surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantages
+            surr1 = ratio * advantages_expanded
+            surr2 = (
+                torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
+                * advantages_expanded
+            )
 
             actor_loss = -torch.min(surr1, surr2).mean()
-            critic_loss = F.mse_loss(state_values.squeeze(-1), rewards)
+            critic_loss = F.mse_loss(state_values.squeeze(-1), returns)
 
-            ce_loss = F.cross_entropy(action_probs.view(-1, 3), actions.view(-1))
-            loss = actor_loss + 0.5 * critic_loss + 0.01 * ce_loss
+            entropy = dist.entropy().mean()
+            loss = actor_loss + 0.5 * critic_loss - self.entropy_multiplier * entropy
 
             self.optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.actor_critic.parameters(), max_norm=0.5)
             self.optimizer.step()
 
-            return loss.item()
+        return loss.item()
 
     def save(self, filename):
         torch.save(

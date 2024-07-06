@@ -122,7 +122,7 @@ def scaled_distance(vector1, vector2, scale=1.0, min_value=0.0, max_value=1.0):
 
 
 def worker_process(pipe, id):
-    env = soccer_twos.make(time_scale=70, worker_id=id)
+    env = soccer_twos.make(render=True, worker_id=id)
     while True:
         cmd, data = pipe.recv()
         if cmd == "step":

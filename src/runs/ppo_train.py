@@ -9,7 +9,7 @@ from src.config import N_GAMES
 def train_ppo(n_games, n_agents, batch_size=64, n_envs=4):
     env = ParallelSoccerEnv(n_envs)
     ppo_agent = PPOAgent(336, 3)  # Single agent shared across all environments
-    logger = CustomLogger("ppo", run_name="ppo_v3")
+    logger = CustomLogger("ppo", run_name="ppo_v5")
 
     for i in tqdm(range(n_games)):
         obs = env.reset()
@@ -26,6 +26,9 @@ def train_ppo(n_games, n_agents, batch_size=64, n_envs=4):
             for env_idx in range(n_envs):
                 for j in range(4):
                     if j < n_agents:
+                        print(
+                            "Worker: ", env_idx, "Observation: ", obs[env_idx][j].shape
+                        )
                         actions, action_probs = ppo_agent.act(obs[env_idx][j])
                         env_actions[env_idx][j] = actions
                         episode_states.append(obs[env_idx][j])
@@ -86,4 +89,4 @@ def train_ppo(n_games, n_agents, batch_size=64, n_envs=4):
 
 
 if __name__ == "__main__":
-    trained_agent = train_ppo(n_games=N_GAMES, n_agents=1, batch_size=1024, n_envs=12)
+    trained_agent = train_ppo(n_games=N_GAMES, n_agents=1, batch_size=128, n_envs=4)
