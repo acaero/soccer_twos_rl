@@ -1,3 +1,45 @@
 % !TEX root = master.tex
 \chapter{Methoden} \label{chapter:2}
-Übersicht der angewandten Methoden, Beschreibung einer Baseline-Methode.
+%Übersicht der angewandten Methoden, Beschreibung einer Baseline-Methode.
+
+Zum lösen des ``Soccer Twos'' Problem wurden im Rahmen dieser Gruppenarbeit verschiedene, in der komplexität steigende, Methoden angewendet. Zunächst wurde eine einfach Baseline entwickelt mit der die späteren \ac{RL}-Algorithmen verglichen werden können. Im Folgenden wurde als erstes ein alleiniger \ac{RL}-Agent trainiert, mit dem Ziel ein Tor zu erziehlen. Abschließen wurde versucht dies nun auf das \ac{MARL}-Problem mit dem training mehrerer Agents zu erweitern. %todo noch schöner
+
+\section{Baseline}
+
+Um eine adäquate Vergleichbarkeit und Bewertung der implementierten \ac{RL}-Verfahren zu ermöglichen, wurde zunächst eine einfache Baseline-Methode für das ``Soccer Twos''-Problem entworfen und implementiert. Diese Baseline beruht auf den zwei Verhaltensweisen, ``Verteidigungsmodus'' und ``Angriffsmodus'', die in Abhängigkeit der zuvor beschriebenen Beobachtungsinformationen der Agents ausgeführt werden.
+
+Der ``Verteidigungsmodus'' wird ausgelöst, sobald sich der Ball auf der Heimseite des Spielfelds befindet und somit die Gefahr für ein Gegentor besteht. Die Agents versuchen in diesem Fall, das eigene Tor zu verteidigen, indem sie sich zwischen das Tor und den Ball bewegen. Dies geschieht, indem sie sich zunächst zum Mittelpunkt zwischen dem Ball und dem Tor drehen und anschließend vorwärts zu diesem Mittelpunkt laufen. Da dies wiederholt ausgeführt wird, bewegen sich die Agents somit zwischen den Ball und das Tor und wehren Schüsse auf das eigene Tor ab.
+Der ``Angriffsmodus'' wird ausgeführt, sobald der Ball auf die gegnerische Spielfeldseite gelangt ist und somit ein Angriff auf das gegnerische Tor stattfinden kann. Die Agents drehen sich nun so lange, bis der Winkel zwischen Spieler und Ball kleiner als 30 Grad ist, und laufen dann auf den Ball zu. Die Idee hier ist, dass sie alles darauf setzen, einen Schuss durchzuführen und somit ein Tor zu erzielen.
+
+Diese Baseline ist somit sehr simpel und beruht auf festen Regeln, die in Abhängigkeit von den aktuellen Beobachtungen der Agents ausgeführt werden. Sie ermöglicht ein einfaches Fußballspiel zwischen den Agents, welches nicht besonders komplex und effizient ist, aber ein sehr vereinfachtes Spielgeschehen mit gelegentlichen erfolgreichen Torschüssen oder Abwehraktionen erlaubt. Das Ziel der im Folgenden entwickelten \ac{RL}-Verfahren ist es nun, diese einfache Spielweise zu übertreffen.
+
+
+\section{Single Agent RL Algorithms}
+
+Zum Einstieg wurden für das ``Soccer Twos'' Problem zunächste einige grundlegende \ac{RL}-Algorithmen angewendet, die sich jedoch nur auf einen Agent beschränken. Es wurde somit eine Vereinfachung vogenommen und nicht direkt das deutlich komplexere \ac{MARL} Problem, bei welchem mehrer Agents trainiert werden müssen, betrachtet um zu Beginn die allgemeine Machbarkeit und Komplexität des Trainingsprozesse zu untersuchen. Im Rahem dieser Vereinfachung werden weiter vier Agents und ein Ball zu Start des Spiels zufällig auf dem Feld plaziert, jedoch kann sich nur einer dieser Agents bewegen und wird trainiert. 
+
+%DDQN
+Ein typischer Ansatz zum lösen von \ac{RL} Probleme ist der \ac{DQN} Algorithms, welcher das Q-Learning mit tiefen neuronalen Netzwerken kombiniert, um optimale Handlungsstrategien zu erlernen. Der Kern des \ac{DQN} besteht darin, eine Q-Funktion zu approximieren, die den erwarteten zukünftigen Belohnungswert für eine gegebene Aktion in einem bestimmten Zustand angibt. %hier könnte mathematische funktion aber paper sonst schnell zu lang
+Durch kontinuierliches Training und Anpassung der Gewichte des neuronalen Netzwerks kann der Agent somit lernen, optimale Aktionen zu wählen, die langfristig zu höheren Belohnungen führen \cite{mnih2013}. 
+Eine Erweiterung dieses Verfahrens stellt der \ac{DDQN} Algorithmus dar.  Dieser soll die Überschätzung von Q-Werten verringern, indem zwei separate Netzwerke verwendet werden. Eines dieser Netze übernimmt die Auswahl der Aktionen und das andere ist für die Bewertung dieser zuständig. Diese Trennung ermöglicht eine stabilere und genauere Schätzung der Q-Werte, was zu einem robusteren Lernprozess führt.
+
+%PG
+Ein ebenfalls verbreiteter Algorithmus im Bereich des \ac{RL} ist der \ac{PG} Algorithmus, welcher sowohl für kontinuierlichen als auch diskrete Aktionsräume geeignet ist. Bei diesem Verfahren wir direkt eine Policy-Funktion, in Form eines Neuronalen Netzes, erlernt, die angibt, welche Aktion in einem gegebenen Zustand ausgeführt werden soll.
+Eine Erweiterung dieser Methode stellt der \ac{DPG} und auch \ac{DDPG} Algorithmus dar. Diese verwenden zwei Netzwerke: ein Actor-Netzwerk, das die Policy darstellt und Aktionen auswählt, und ein Critic-Netzwerk, das den Q-Wert der ausgewählten Aktionen schätzt. Es wird somit die Stabilität und Effizienz des Lernens verbessern und bietet vorallem in bei komplexeren Aufgaben in kontinuierlichen Aktionsräumen vorteile. %ggf. nochmal darauf eingehen das wir das trotz diskreten Aktionsraum nutzen und warum
+
+%PPO
+Ein weiterer bedeutender Ansatz in diesem Bereich ist die \ac{PPO} Methode. \ac{PPO} gehört zur Familie der \ac{PG} Methoden und zielt darauf ab, die Instabilitäten und hohen Varianzen traditioneller \ac{PG} Algorithmen zu reduzieren. Dies wird durch die Einführung eines speziellen Clipping-Mechanismus erreicht, der die Updates der Policy innerhalb eines bestimmten Bereichs hält. Dieser Mechanismus stellt sicher, dass die Änderungen an der Policy während des Trainings nicht zu drastisch sind, wodurch ein stabilerer und effizienterer Lernprozess gewährleistet wird \cite{todo}.
+
+%SAC
+Ein weiterere Methode ist der \ac{SAC} Algorithms. \ac{SAC} kombiniert Elemente der Actor-Critic-Architektur mit einer Entropiemaximierung, um eine explorativere und robustere Policy zu erlernen. Der Kern der \ac{SAC} Methode besteht somit ebenfalls darin, sowohl ein Policy-Netzwerk (Actor) als auch ein Q-Netzwerk (Critic) zu erlernen. Der wesentliche Unterschied zu anderen Methoden liegt jedoch in der Maximierung der Entropie der Policy. Dies bedeutet, dass der Agent nicht nur darauf abzielt, die Belohnung zu maximieren, sondern auch die Unsicherheit seiner Entscheidungen zu berücksichtigen und somit eine vielfältigere Aktionsauswahl zu ermöglichen. Diese Entropie-Maximierung fördert eine bessere Exploration und verhindert das Verharren in suboptimalen Policys \cite{todo}. 
+
+%Sparse Rewards
+Bereits beim Training dieser ersten Algorithmen wurden einige Auffälligkeiten beobachtet. Besonders die Tatschache das in der ``Soccer-Twos''-Umgebung nur relativ selten ein Tor und somit eine Belohnung für den Agenten erziehlt wird führte zu einem sehr langsamen Lernprozess und schlechten Ergebnissen. Da es sich hier somit um eine sogennante ``sparse reward'' Umgebung handelt, in welcher die Belohnungen selten und unregelmäßig auftreten, wurde die Behlohnungsfunktion der Agenten angepasst. Neben einer Belohung für ein erziehltes Tor erhalten die Agenten nun einen Reward welcher auf dem ihrem Abstand zum Ball baisert. %todo konkrete formel einfügen
+Durch diese Anpassung wird der Agent nun angeregt sicher schneller zum Ball zu bewegen und die Wahrscheinlichkeit das er eine sinnvolle Aktion und letztendlich ein Tor erziehlt steigt.
+%weitere auf dieses Problem angepasst \ac{RL} Algorithmen betrachtet.
+
+%verwendeten Methoden noch fett machen?
+
+\section{Multi Agent RL Algorithms}
+
+
