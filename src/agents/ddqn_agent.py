@@ -9,45 +9,36 @@ import random
 class QNetwork(nn.Module):
     def __init__(self, state_size, action_size):
         super(QNetwork, self).__init__()
-        self.fc1 = nn.Linear(state_size, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 64)
-        self.fc4 = nn.Linear(
-            64, action_size * 3
-        )  # 3 options for each of the 3 dimensions
+        self.fc1 = nn.Linear(state_size, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, action_size * 3)
 
     def forward(self, state):
         x = torch.relu(self.fc1(state))
         x = torch.relu(self.fc2(x))
-        x = torch.relu(self.fc3(x))
-        return self.fc4(x).view(
-            -1, 3, 3
-        )  # Reshape to (batch_size, 3 dimensions, 3 options)
+        return self.fc3(x).view(-1, 3, 3)
 
 
-# Define the DDQN Agent
-class DDQNAgent:
+# Define the DQN Agent
+class DQNAgent:
     def __init__(
         self,
         state_size,
         action_size,
-        learning_rate=0.002,
+        learning_rate=0.001,
         gamma=0.99,
         epsilon_start=1.0,
         epsilon_min=0.01,
-        epsilon_decay=0.99,
-        batch_size=1024,
-        buffer_size=10240,
-        update_frequency=100,
+        epsilon_decay=0.9999,
+        batch_size=64,
+        buffer_size=10000,
     ):
-        self.num_agents = 1
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.qnetwork_local = QNetwork(state_size, action_size).to(self.device)
-        self.qnetwork_target = QNetwork(state_size, action_size).to(self.device)
-        self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=learning_rate)
+        self.qnetwork = QNetwork(state_size, action_size).to(self.device)
+        self.optimizer = optim.Adam(self.qnetwork.parameters(), lr=learning_rate)
         self.criterion = nn.MSELoss()
         self.gamma = gamma
         self.epsilon = epsilon_start
@@ -56,8 +47,7 @@ class DDQNAgent:
         self.memory = []
         self.buffer_size = buffer_size
         self.batch_size = batch_size
-        self.update_frequency = update_frequency
-        self.steps = 0
+        self.num_agents = 1
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -69,11 +59,8 @@ class DDQNAgent:
             return np.random.choice([0, 1, 2], 3).tolist()
 
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-        self.qnetwork_local.eval()
         with torch.no_grad():
-            q_values = self.qnetwork_local(state)
-        self.qnetwork_local.train()
-
+            q_values = self.qnetwork(state)
         actions = q_values.max(2)[1].squeeze().cpu().numpy().tolist()
         return actions
 
@@ -90,14 +77,10 @@ class DDQNAgent:
         next_states = torch.FloatTensor(np.array(next_states)).to(self.device)
         dones = torch.FloatTensor(dones).unsqueeze(1).to(self.device)
 
-        q_values = self.qnetwork_local(states)
+        q_values = self.qnetwork(states)
         state_action_values = q_values.gather(2, actions.unsqueeze(2)).squeeze(2)
 
-        next_state_actions = self.qnetwork_local(next_states).max(2)[1].unsqueeze(2)
-        next_state_values = (
-            self.qnetwork_target(next_states).gather(2, next_state_actions).squeeze(2)
-        )
-
+        next_state_values = self.qnetwork(next_states).max(2)[0]
         expected_state_action_values = rewards + (
             self.gamma * next_state_values * (1 - dones)
         )
@@ -108,23 +91,15 @@ class DDQNAgent:
         loss.backward()
         self.optimizer.step()
 
-        self.steps += 1
-        if self.steps % self.update_frequency == 0:
-            self.hard_update(self.qnetwork_local, self.qnetwork_target)
-
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
         return loss.item()
 
-    def hard_update(self, local_model, target_model):
-        target_model.load_state_dict(local_model.state_dict())
-
     def save(self, filename):
         torch.save(
             {
-                "qnetwork_local_state_dict": self.qnetwork_local.state_dict(),
-                "qnetwork_target_state_dict": self.qnetwork_target.state_dict(),
+                "qnetwork_state_dict": self.qnetwork.state_dict(),
                 "optimizer_state_dict": self.optimizer.state_dict(),
                 "epsilon": self.epsilon,
             },
@@ -133,7 +108,6 @@ class DDQNAgent:
 
     def load(self, filename):
         checkpoint = torch.load(filename, map_location=self.device)
-        self.qnetwork_local.load_state_dict(checkpoint["qnetwork_local_state_dict"])
-        self.qnetwork_target.load_state_dict(checkpoint["qnetwork_target_state_dict"])
+        self.qnetwork.load_state_dict(checkpoint["qnetwork_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.epsilon = checkpoint["epsilon"]

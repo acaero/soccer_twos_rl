@@ -1,87 +1,76 @@
-import numpy as np
-from src.agents.ppo_agent import PPOAgent
-from src.utils import shape_rewards, ParallelSoccerEnv
+import random
+from src.utils import shape_rewards
 from tqdm import tqdm
-from src.logger import CustomLogger
+import soccer_twos
 from src.config import N_GAMES
+from src.agents.ppo_agent import PPOAgent
+from src.logger import CustomLogger
+import numpy as np
 
 
-def train_ppo(n_games, n_agents, batch_size=64, n_envs=4):
-    env = ParallelSoccerEnv(n_envs)
-    ppo_agent = PPOAgent(336, 3)  # Single agent shared across all environments
-    logger = CustomLogger("ppo", run_name="ppo_v5")
+def train_ppo(n_games, n_agents=1, batch_size=128):
+    env = soccer_twos.make(worker_id=2)
+    ppo_agent = PPOAgent(336, 3)  # Assuming state size is 336 and action size is 3
+    logger = CustomLogger("ppo", run_name="ppo_clear_v2")
 
-    for i in tqdm(range(n_games)):
+    for episode in tqdm(range(n_games)):
         obs = env.reset()
-        done = np.array([False] * n_envs)
-        scores = [{j: 0 for j in range(4)} for _ in range(n_envs)]
-        episode_states = []
-        episode_actions = []
-        episode_probs = []
-        episode_rewards = []
-        episode_dones = []
+        done = False
+        episode_rewards = {i: 0 for i in range(4)}
+        episode_steps = 0
 
-        while not done.all():
-            env_actions = [{j: [0, 0, 0] for j in range(4)} for _ in range(n_envs)]
-            for env_idx in range(n_envs):
-                for j in range(4):
-                    if j < n_agents:
-                        print(
-                            "Worker: ", env_idx, "Observation: ", obs[env_idx][j].shape
-                        )
-                        actions, action_probs = ppo_agent.act(obs[env_idx][j])
-                        env_actions[env_idx][j] = actions
-                        episode_states.append(obs[env_idx][j])
-                        episode_actions.append(actions)
-                        episode_probs.append(action_probs)
+        states, actions, old_probs, rewards, dones = [], [], [], [], []
 
-            next_obs, rewards, done, info = env.step(env_actions)
+        while not done:
+            episode_steps += 1
+            agent_actions = {}
+            agent_probs = {}
 
-            for env_idx in range(n_envs):
-                for agent_id in range(4):
-                    shaped_reward = shape_rewards(info[env_idx], int(agent_id))
-                    scores[env_idx][agent_id] = shaped_reward
-                    if agent_id < n_agents:
-                        episode_rewards.append(shaped_reward)
-                        episode_dones.append(done[env_idx]["__all__"])
+            for i in range(4):
+                if i < n_agents:
+                    action, prob = ppo_agent.act(obs[i])
+                    agent_actions[i] = action
+                    agent_probs[i] = prob
+                else:
+                    agent_actions[i] = [0, 0, 0]
+
+            next_obs, reward, done, info = env.step(agent_actions)
+            done = done["__all__"]
+
+            for i in range(4):
+                shaped_reward = shape_rewards(info, i)
+                episode_rewards[i] = shaped_reward
+
+                if i < n_agents:
+                    states.append(obs[i])
+                    actions.append(agent_actions[i])
+                    old_probs.append(agent_probs[i])
+                    rewards.append(shaped_reward)
+                    dones.append(done)
 
             obs = next_obs
 
-            # Perform update if batch size is reached
-            if len(episode_states) >= batch_size:
+            # Perform PPO update if we have enough samples
+            if len(states) >= batch_size:
+                ppo_agent.update(states, actions, old_probs, rewards, dones)
+                states, actions, old_probs, rewards, dones = [], [], [], [], []
 
-                ppo_agent.update(
-                    episode_states,
-                    episode_actions,
-                    episode_probs,
-                    episode_rewards,
-                    episode_dones,
-                )
-                episode_states = []
-                episode_actions = []
-                episode_probs = []
-                episode_rewards = []
-                episode_dones = []
+        # Perform final update with remaining samples
+        if states:
+            ppo_agent.update(states, actions, old_probs, rewards, dones)
 
-        # Perform final update with remaining experiences
-        if episode_states:
-            ppo_agent.update(
-                episode_states,
-                episode_actions,
-                episode_probs,
-                episode_rewards,
-                episode_dones,
-            )
-
+        # Logging
+        avg_reward = np.mean([episode_rewards[i] for i in range(n_agents)])
         logger.write_logs_and_tensorboard(
-            i,
-            scores[0],
-            next_obs[0],
-            rewards[0],
-            done[0],
-            info[0],
-            env_actions[0],
+            episode,
+            episode_rewards,
+            next_obs,
+            reward,
+            done,
+            info,
+            agent_actions,
             ppo_agent,
+            custom={"avg_reward": avg_reward, "steps": episode_steps},
         )
 
     env.close()
@@ -89,4 +78,4 @@ def train_ppo(n_games, n_agents, batch_size=64, n_envs=4):
 
 
 if __name__ == "__main__":
-    trained_agent = train_ppo(n_games=N_GAMES, n_agents=1, batch_size=128, n_envs=4)
+    trained_agent = train_ppo(n_games=N_GAMES, n_agents=1, batch_size=4)

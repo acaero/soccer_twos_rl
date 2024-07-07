@@ -1,9 +1,9 @@
-from src.runs.simple.ddpg_train import train_ddpg
-from src.runs.simple.ddqn_train import train_ddqn
-from src.runs.simple.maddpg_train import train_maddpg
-from src.runs.simple.baseline_train import train_random, train_baseline
-from src.runs.simple.ppo_train import train_ppo
-from src.runs.simple.sac_train import train_sac
+from src.runs.ddpg_train import train_ddpg
+from src.runs.ddqn_train import train_ddqn
+from src.runs.maddpg_train import train_maddpg
+from src.runs.baseline_train import train_random, train_baseline
+from src.runs.ppo_train import train_ppo
+from src.runs.a2c_train import train_sac
 from src.config import N_GAMES
 
 if __name__ == "__main__":

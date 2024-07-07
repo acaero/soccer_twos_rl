@@ -42,7 +42,7 @@ class CustomLogger:
         iteration,
         scores,
         obs,
-        reward,
+        rewards,
         done,
         info,
         actions,
@@ -54,23 +54,20 @@ class CustomLogger:
 
         if multi_env:
             avg_scores = {i: np.mean(score) for i, score in scores.items()}
-            avg_score = np.mean(
-                [score for i, score in avg_scores.items() if i < agent.num_agents]
-            )
+            avg_score = np.mean([score for i, score in avg_scores.items()])
         else:
             avg_scores = scores
-            avg_score = np.mean(
-                [score for i, score in scores.items() if i < agent.num_agents]
-            )
+            avg_score = np.mean([score for _, score in scores.items()])
 
         # Log metrics to TensorBoard
-        for i in range(len(avg_scores)):
-            self.writer.add_scalar(f"Score of agent {i}", avg_scores[i], iteration)
-            self.writer.add_scalar(f"Reward of agent {i}", avg_scores[i], iteration)
-
         self.writer.add_scalar(
-            f"Average Score of first {agent.num_agents} agent/s", avg_score, iteration
+            f"Difference of agent 0 score to average score",
+            scores[0] - avg_score,
+            iteration,
         )
+        for i in range(len(scores)):
+            self.writer.add_scalar(f"Score of agent {i}", scores[i], iteration)
+            self.writer.add_scalar(f"Reward of agent {i}", rewards[i], iteration)
 
         self._logger.info(
             f"{self.name}",
@@ -78,7 +75,7 @@ class CustomLogger:
                 "custom_fields": {
                     "episode": iteration,
                     "scores": str(convert_arrays_to_lists(scores)),
-                    "reward": str(convert_arrays_to_lists(reward)),
+                    "reward": str(convert_arrays_to_lists(rewards)),
                     "done": str(convert_arrays_to_lists(done)),
                     "info": str(convert_arrays_to_lists(info)),
                     "actions": str(convert_arrays_to_lists(actions)),
@@ -108,8 +105,8 @@ class CustomLogger:
 
         self.scores.append(avg_score)
 
-        # Save model checkpoint every 500 episodes
-        if iteration % 500 == 0:
+        # Save model checkpoint every 10 episodes
+        if iteration % 10 == 0:
             custom_str = ", ".join(f"{key}: {value}" for key, value in custom.items())
             print(
                 f"Episode: {iteration}, Average Score of first {agent.num_agents} agents: {avg_score:.2f}, Name: {self.name}, {custom_str}"

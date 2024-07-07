@@ -10,24 +10,26 @@ class ActorCritic(nn.Module):
         super(ActorCritic, self).__init__()
         self.actor = nn.Sequential(
             nn.Linear(state_size, 512),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(512, 256),
-            nn.Tanh(),
-            nn.Linear(256, action_size * 3),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, action_size * 3),
         )
         self.critic = nn.Sequential(
             nn.Linear(state_size, 512),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(512, 256),
-            nn.Tanh(),
-            nn.Linear(256, 1),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 1),
         )
 
     def forward(self, state):
-        # Ensure state is 2D: (batch_size, state_size)
         if state.dim() == 1:
             state = state.unsqueeze(0)
-
         action_logits = self.actor(state)
         action_probs = F.softmax(action_logits.view(state.size(0), 3, 3), dim=2)
         state_value = self.critic(state)
@@ -43,8 +45,6 @@ class PPOAgent:
         gamma=0.99,
         clip_size=0.2,
         epochs=10,
-        entropy_multiplier=0.01,
-        gae_lambda=0.95,
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.actor_critic = ActorCritic(state_size, action_size).to(self.device)
@@ -52,16 +52,12 @@ class PPOAgent:
         self.gamma = gamma
         self.epsilon = clip_size
         self.epochs = epochs
-        self.action_size = action_size
-        self.entropy_multiplier = entropy_multiplier
-        self.gae_lambda = gae_lambda
         self.num_agents = 1
 
     def act(self, state):
         state = torch.FloatTensor(state).to(self.device)
         with torch.no_grad():
             action_probs, _ = self.actor_critic(state)
-
         action_probs = action_probs.squeeze(0).cpu().numpy()
         actions = []
         chosen_probs = []
@@ -71,23 +67,7 @@ class PPOAgent:
             action = np.random.choice(3, p=probs)
             actions.append(action)
             chosen_probs.append(probs[action])
-
         return np.array(actions).flatten(), np.array(chosen_probs).flatten()
-
-    def gae(self, rewards, values, dones):
-        advantages = []
-        gae = 0
-        for t in reversed(range(len(rewards))):
-            if t == len(rewards) - 1:
-                next_value = 0  # Assuming episode ends
-            else:
-                next_value = values[t + 1]
-
-            delta = rewards[t] + self.gamma * next_value * (1 - dones[t]) - values[t]
-            gae = delta + self.gamma * self.gae_lambda * (1 - dones[t]) * gae
-            advantages.insert(0, gae)
-
-        return np.array(advantages)
 
     def update(self, states, actions, old_probs, rewards, dones):
         states = torch.FloatTensor(np.array(states)).to(self.device)
@@ -96,21 +76,7 @@ class PPOAgent:
         rewards = torch.FloatTensor(rewards).to(self.device)
         dones = torch.FloatTensor(dones).to(self.device)
 
-        # Compute values for all states
-        with torch.no_grad():
-            _, values = self.actor_critic(states)
-            values = values.squeeze(-1).cpu().numpy()
-
-        # Compute GAE
-        advantages = self.gae(rewards.cpu().numpy(), values, dones.cpu().numpy())
-        advantages = torch.FloatTensor(advantages).to(self.device)
-
-        # Compute returns
-        returns = advantages + torch.FloatTensor(values).to(self.device)
-
-        # Normalize advantages
-        if len(advantages) > 1:
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        returns = self.compute_returns(rewards, dones)
 
         for _ in range(self.epochs):
             action_probs, state_values = self.actor_critic(states)
@@ -130,6 +96,8 @@ class PPOAgent:
 
             ratio = torch.exp(new_probs - old_probs_reshaped)
             ratio = ratio.view(states.size(0), -1)
+
+            advantages = returns - state_values.squeeze(-1).detach()
             advantages_expanded = advantages.unsqueeze(1).expand_as(ratio)
 
             surr1 = ratio * advantages_expanded
@@ -141,32 +109,24 @@ class PPOAgent:
             actor_loss = -torch.min(surr1, surr2).mean()
             critic_loss = F.mse_loss(state_values.squeeze(-1), returns)
 
-            entropy = dist.entropy().mean()
-            loss = actor_loss + 0.5 * critic_loss - self.entropy_multiplier * entropy
+            loss = actor_loss + 0.5 * critic_loss
 
             self.optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.actor_critic.parameters(), max_norm=0.5)
             self.optimizer.step()
 
         return loss.item()
 
+    def compute_returns(self, rewards, dones):
+        returns = []
+        R = 0
+        for r, d in zip(reversed(rewards), reversed(dones)):
+            R = r + self.gamma * R * (1 - d)
+            returns.insert(0, R)
+        return torch.tensor(returns).to(self.device)
+
     def save(self, filename):
-        torch.save(
-            {
-                "actor_critic_state_dict": self.actor_critic.state_dict(),
-                "optimizer_state_dict": self.optimizer.state_dict(),
-                "epsilon": self.epsilon,
-                "gamma": self.gamma,
-                "epochs": self.epochs,
-            },
-            filename,
-        )
+        torch.save(self.actor_critic.state_dict(), filename)
 
     def load(self, filename):
-        checkpoint = torch.load(filename)
-        self.actor_critic.load_state_dict(checkpoint["actor_critic_state_dict"])
-        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        self.epsilon = checkpoint["epsilon"]
-        self.gamma = checkpoint["gamma"]
-        self.epochs = checkpoint["epochs"]
+        self.actor_critic.load_state_dict(torch.load(filename))
