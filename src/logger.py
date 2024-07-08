@@ -1,5 +1,3 @@
-import logging
-import logging.handlers
 import json
 from datetime import datetime, timezone
 from src.config import CHECKPOINT_DIR, LOG_DIR
@@ -10,32 +8,36 @@ import numpy as np
 
 
 class CustomLogger:
-    def __init__(self, name="Please Set Name", run_name: str = "default"):
+    def __init__(self, name="Please Set Name", run_name: str = "default", save=True):
         self.name = name
         self.run_name = run_name
-
-        self._logger = logging.getLogger()
-        self._logger.setLevel(logging.INFO)
+        self.save = save
 
         self.checkpoint_dir = Path(CHECKPOINT_DIR)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
+        # TensorBoard logs
         self.tensorboard_log_dir = Path(LOG_DIR) / "tensorboard" / run_name
         self.tensorboard_log_dir.mkdir(parents=True, exist_ok=True)
 
-        self.plain_log_dir = Path(LOG_DIR) / "plain"
+        # Plain logs
+        self.plain_log_dir = Path(LOG_DIR) / "plain" / run_name
         self.plain_log_dir.mkdir(parents=True, exist_ok=True)
 
         self.writer = SummaryWriter(log_dir=self.tensorboard_log_dir)
         self.scores = []
 
-        log_path = Path(self.plain_log_dir) / "logs.json"
-        file_handler = logging.FileHandler(log_path)
+        self.log_file = self.plain_log_dir / f"logs_{self.name}.json"
 
-        formatter = JSONFormatter()
-        file_handler.setFormatter(formatter)
-
-        self._logger.addHandler(file_handler)
+    def log(self, **kwargs):
+        log_entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "name": self.name,
+            **kwargs,
+        }
+        with open(self.log_file, "a") as f:
+            json.dump(log_entry, f)
+            f.write("\n")  # Add a newline for readability
 
     def write_logs_and_tensorboard(
         self,
@@ -46,7 +48,7 @@ class CustomLogger:
         done,
         info,
         actions,
-        agent,
+        agent=None,
         custom={"": None},
     ):
         # Check if we're dealing with multi-environment or single-environment case
@@ -69,26 +71,22 @@ class CustomLogger:
             self.writer.add_scalar(f"Score of agent {i}", scores[i], iteration)
             self.writer.add_scalar(f"Reward of agent {i}", rewards[i], iteration)
 
-        self._logger.info(
-            f"{self.name}",
-            extra={
-                "custom_fields": {
-                    "episode": iteration,
-                    "scores": str(convert_arrays_to_lists(scores)),
-                    "reward": str(convert_arrays_to_lists(rewards)),
-                    "done": str(convert_arrays_to_lists(done)),
-                    "info": str(convert_arrays_to_lists(info)),
-                    "actions": str(convert_arrays_to_lists(actions)),
-                    "observations": str(convert_arrays_to_lists(obs)),
-                    **custom,
-                }
-            },
+        # Log to file
+        self.log(
+            episode=iteration,
+            scores=str(convert_arrays_to_lists(scores)),
+            reward=str(convert_arrays_to_lists(rewards)),
+            done=str(convert_arrays_to_lists(done)),
+            info=str(convert_arrays_to_lists(info)),
+            actions=str(convert_arrays_to_lists(actions)),
+            observations=str(convert_arrays_to_lists(obs)),
+            **custom,
         )
 
         # Save the best model
         if not self.scores or max(self.scores) < avg_score:
             self.scores = [avg_score]
-            print("new best found at iteration", iteration)
+
             best_model_pattern = f"best_model_{self.name}_*.pth"
             existing_best_model_files = list(
                 self.checkpoint_dir.glob(best_model_pattern)
@@ -101,40 +99,20 @@ class CustomLogger:
                 self.checkpoint_dir
                 / f"best_model_{self.name}_{iteration}_{self.run_name}.pth"
             )
-            agent.save(best_model_path)
+            if self.save and agent:
+                agent.save(best_model_path)
 
         self.scores.append(avg_score)
 
         # Save model checkpoint every 10 episodes
         if iteration % 10 == 0:
-            custom_str = ", ".join(f"{key}: {value}" for key, value in custom.items())
-            print(
-                f"Episode: {iteration}, Average Score of first {agent.num_agents} agents: {avg_score:.2f}, Name: {self.name}, {custom_str}"
-            )
             checkpoint_filename = (
                 self.checkpoint_dir
                 / f"checkpoint_{self.name}_{iteration}_{self.run_name}.pth"
             )
-            agent.save(checkpoint_filename)
+            if self.save and agent:
+                agent.save(checkpoint_filename)
 
-
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        timestamp = datetime.fromtimestamp(record.created, timezone.utc).isoformat()
-
-        log_record = {
-            "timestamp": timestamp,
-            "level": record.levelname,
-            "message": record.getMessage(),
-        }
-
-        if record.exc_info:
-            log_record["exc_info"] = self.formatException(record.exc_info)
-
-        if record.stack_info:
-            log_record["stack_info"] = self.formatStack(record.stack_info)
-
-        if hasattr(record, "custom_fields"):
-            log_record.update(record.custom_fields)
-
-        return json.dumps(log_record, default=str)
+    def log_and_print(self, message, **kwargs):
+        self.log(message, **kwargs)
+        print(f"{self.name}: {message}")

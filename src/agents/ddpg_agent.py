@@ -12,17 +12,15 @@ class Actor(nn.Module):
 
         self.fc1 = nn.Linear(state_size, 512)
         self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 64)
-        self.fc4 = nn.Linear(
-            64, action_size * 3
+        self.fc3 = nn.Linear(
+            256, action_size * 3
         )  # 3 actions, each with 3 possibilities
 
     def forward(self, state):
         x = torch.relu(self.fc1(state))
         x = torch.relu(self.fc2(x))
-        x = torch.relu(self.fc3(x))
         return torch.softmax(
-            self.fc4(x).view(-1, 3, 3), dim=2
+            self.fc3(x).view(-1, 3, 3), dim=2
         )  # Apply softmax to each group of 3
 
 
@@ -31,15 +29,13 @@ class Critic(nn.Module):
         super(Critic, self).__init__()
         self.fc1 = nn.Linear(state_size + action_size * 3, 1024)
         self.fc2 = nn.Linear(1024, 256)
-        self.fc3 = nn.Linear(256, 64)
-        self.fc4 = nn.Linear(64, 1)
+        self.fc3 = nn.Linear(256, 1)
 
     def forward(self, state, action):
         x = torch.cat([state, action], dim=1)
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        x = torch.relu(self.fc3(x))
-        return self.fc4(x)
+        return self.fc3(x)
 
 
 class DDPGAgent:

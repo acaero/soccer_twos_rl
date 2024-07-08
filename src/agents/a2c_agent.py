@@ -9,15 +9,13 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         self.fc1 = nn.Linear(state_size, 512)
         self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 64)
-        self.fc4 = nn.Linear(64, action_size * 3)
+        self.fc3 = nn.Linear(256, action_size * 3)
         self.action_size = action_size
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
         x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        action_logits = self.fc4(x).view(-1, self.action_size, 3)
+        action_logits = self.fc3(x).view(-1, self.action_size, 3)
         return action_logits
 
 
@@ -26,14 +24,12 @@ class Critic(nn.Module):
         super(Critic, self).__init__()
         self.fc1 = nn.Linear(state_size, 512)
         self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 64)
-        self.fc4 = nn.Linear(64, 1)
+        self.fc3 = nn.Linear(256, 1)
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
         x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        return self.fc4(x)
+        return self.fc3(x)
 
 
 class A2CAgent:

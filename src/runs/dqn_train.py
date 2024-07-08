@@ -3,7 +3,7 @@ from src.utils import shape_rewards
 from tqdm import tqdm
 import soccer_twos
 from src.config import N_GAMES
-from src.agents.ddqn_agent import DQNAgent
+from src.agents.dqn_agent import DQNAgent
 from src.logger import CustomLogger
 
 
