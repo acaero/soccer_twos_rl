@@ -62,13 +62,6 @@ Zu Beginn wurden die verschiedenen Verfahren zwar eigenständig implementiert, j
 
 \section{Multi Agent Method}
 
-Aufbauend auf den, bei der Implementierung der vorherigen Methoden gewonnen Erkentnissen, wurde im folgeden das \ac{MARL} Problem betrachtet. Da es sich hierbei um ein großes Themenfeld mit vielen, teils sehr komplexen Methoden handelt und bereits beim Training in einfacheren Single Agent Umgebung einige Herausforderungen auftraten wurden die Untersuchungen im \ac{MARL}-Bereich auf die Anwendung eines competitive self-plays mit dem \ac{PPO} Algorithms beschränkt.
-
-
-
-
-
-
-
-
-
+ Aufbauend auf den bei der Implementierung der vorherigen Methoden gewonnenen Erkenntnissen wurde im Folgenden das \ac{MARL}-Problem betrachtet. Da es sich hierbei um ein großes Themenfeld mit vielen, teils sehr komplexen Methoden handelt und bereits beim Training in einfacheren Single-Agent-Umgebungen einige Herausforderungen auftraten, wurden die Untersuchungen im \ac{MARL}-Bereich auf die Anwendung eines ``competitive self-plays'' mit dem \ac{PPO}-Algorithmus beschränkt.
+ 
+ Bei ``competitive self-play'' spielt und lernt ein Agent, indem er gegen sich selbst oder eine alternative Version seiner selbst antritt. Im Kontext des ``Soccer-Twos''-Problems wurde eine Population an Agenten erzeugt, die in anfangs zufällig zugeordneten Spielen gegeneinander antreten. Basierend auf diesen Spielen erhalten die Agenten ein Update zu ihrem ELO-Rating, einer Bewertung, die ihre relative Spielstärke widerspiegelt, und sammeln währenddessen individuell Erfahrungen. Nach ihren Spielen werden diese Erfahrungen genutzt, um ihre jeweilige Policy zu aktualisieren. Dieses Verfahren wird wiederholt fortgesetzt, wobei jedoch nun die Zuordnung der Spielgegner aufgrund der ELO-Ratings getroffen wird. Hierdurch kann sichergestellt werden, dass ein Agent gegen einen Gegner auf ähnlichem Niveau antritt und so durch die angemessene Herausforderung des Spiels in der Lage ist, seine eigenen Fähigkeiten iterativ zu verbessern.
