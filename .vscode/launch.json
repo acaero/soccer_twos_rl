@@ -5,7 +5,7 @@
       "name": "Python: Current File (Integrated Terminal)",
       "type": "debugpy",
       "request": "launch",
-      "program": "${file}",
+      "module": "src.runs.ddqn_eval",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}" // This ensures the script is run from the project root
     }
