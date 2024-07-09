@@ -14,7 +14,7 @@ Der ``Angriffsmodus'' wird ausgeführt, sobald der Ball auf die gegnerische Spie
 Diese Baseline ist somit sehr simpel und beruht auf festen Regeln, die in Abhängigkeit von den aktuellen Beobachtungen der Agents ausgeführt werden. Sie ermöglicht ein einfaches Fußballspiel zwischen den Agents, welches nicht besonders komplex und effizient ist, aber ein sehr vereinfachtes Spielgeschehen mit gelegentlichen erfolgreichen Torschüssen oder Abwehraktionen erlaubt. Das Ziel der im Folgenden entwickelten \ac{RL}-Verfahren ist es nun, diese einfache Spielweise zu übertreffen.
 
 
-\section{Single Agent RL Algorithms}
+\section{Single Agent RL Algorithmen}
 
 Zum Einstieg wurden für das ``Soccer Twos'' Problem zunächst einige grundlegende \ac{RL}-Algorithmen angewendet, die sich jedoch nur auf einen Agent beschränken. Es wurde somit eine Vereinfachung vorgenommen und nicht direkt das deutlich komplexere \ac{MARL} Problem, bei welchem mehrere Agents trainiert werden müssen, betrachtet um zu Beginn die allgemeine Machbarkeit und Komplexität des Trainingsprozesses zu untersuchen. Im Rahmen dieser Vereinfachung werden weiter vier Agents und ein Ball zu Start des Spiels zufällig auf dem Feld platziert, jedoch kann sich nur einer dieser Agents bewegen und wird trainiert. 
 
@@ -60,7 +60,7 @@ Durch diese Anpassung wird der Agent nun angeregt sicher schneller zum Ball zu b
 Eine weitere wichtige Entscheidung, die im Laufe des Entwicklungsprozesses getroffen wurde, war die Verwendung der \ac{SB3} Bibliothek \cite{stable-baselines3} für die Implementierung der \ac{PPO} und \ac{A2C} Methoden. Es handelt sich hierbei um eine Open-Scource-Bibliothek welche robuste und effiziente Implementierungen einer Vielzahl an moderneren \ac{RL}-Algorithmen bietet.
 Zu Beginn wurden die verschiedenen Verfahren zwar eigenständig implementiert, jedoch stießen diese aufgrund der hohen Komplexität schnell an ihre Grenzen. Durch die Nutzung von \ac{SB3} konnte eine korrekte Implementierung sichergestellt werden. Zudem ermöglicht die Bibliothek den Einsatz fortschrittlicher Optimierungsverfahren und unterstützt Multiprocessing während des Trainings. Dies führte zu einer erheblichen Verbesserung der Trainingszeit und der erzielten Ergebnisse.
 
-\section{Multi Agent Method}
+\section{Multi Agent Methoden}
 
  Aufbauend auf den bei der Implementierung der vorherigen Methoden gewonnenen Erkenntnissen wurde im Folgenden das \ac{MARL}-Problem betrachtet. Da es sich hierbei um ein großes Themenfeld mit vielen, teils sehr komplexen Methoden handelt und bereits beim Training in einfacheren Single-Agent-Umgebungen einige Herausforderungen auftraten, wurden die Untersuchungen im \ac{MARL}-Bereich auf die Anwendung eines ``competitive self-plays'' mit dem \ac{PPO}-Algorithmus beschränkt.
  
