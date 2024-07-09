@@ -4,6 +4,7 @@
 2. Initialize a virtual environment using `<PATH_PYTHON_3.9>/python.exe -m venv .venv`. **Note: `virtualenv` will fail due to legacy requirements for the `setup.py`.**
 3. (Optionally) Install [CUDA 11.8](https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_local) for GPU training
 4. Run `pip install --no-cache-dir -r requirements.txt ` to install all requirements.
+5. Run `tensorboard --logdir src\runs\out\logs\tensorboard`
 
 ## Pre-existing environment
 
