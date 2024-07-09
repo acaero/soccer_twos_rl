@@ -1,117 +1,22 @@
 from pathlib import Path
-import gym
-import numpy as np
-import soccer_twos
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
-from stable_baselines3.common.utils import set_random_seed
-from stable_baselines3.common.callbacks import BaseCallback
-from tqdm import tqdm
-from src.utils import shape_rewards
+
+from src.env import make_env, ProgressBarManager
 from src.config import N_GAMES, LOG_DIR, CHECKPOINT_DIR
-from src.logger import CustomLogger
 
 
-class SoccerTwosEnv(gym.Env):
-    def __init__(self, worker_id=0, render=False, logger=None):
-        self.env = soccer_twos.make(worker_id=worker_id, render=render)
-        self.action_space = self.env.action_space
-        self.observation_space = self.env.observation_space
-        self.worker_id = worker_id
-
-        self.logger = logger
-        self.iteration = 0
-
-    def reset(self):
-        out = self.env.reset()
-        return np.array(out[0])
-
-    def step(self, action):
-        action = {0: action, 1: [0, 0, 0], 2: [0, 0, 0], 3: [0, 0, 0]}
-        obs, rewards, dones, info = self.env.step(action)
-
-        self.iteration += 1
-        if self.logger is not None:
-            self.logger.write_logs_and_tensorboard(
-                self.iteration,
-                {i: shape_rewards(info, i) for i in range(4)},
-                obs,
-                rewards,
-                dones["__all__"],
-                info,
-                action,
-            )
-        return (
-            np.array(obs[0]),
-            float(rewards[0]) + shape_rewards(info, 0),
-            dones["__all__"],
-            info,
-        )
-
-    def close(self):
-        return self.env.close()
-
-
-def make_env(env_id: int, rank: int, seed: int = 0):
-    """
-    Utility function for multiprocessed env.
-
-    :param env_id: the environment ID
-    :param num_env: the number of environments you wish to have in subprocesses
-    :param seed: the initial seed for RNG
-    :param rank: index of the subprocess
-    """
-
-    def _init():
-        if rank == 0:
-            logger = CustomLogger("ppo", run_name=f"ppo_env{rank}", save=False)
-        else:
-            logger = None
-        env = SoccerTwosEnv(worker_id=env_id, render=False, logger=logger)
-        env.reset()
-        return env
-
-    set_random_seed(seed)
-    return _init
-
-
-class ProgressBarCallback(BaseCallback):
-    """
-    :param pbar: (tqdm.pbar) Progress bar object
-    """
-
-    def __init__(self, pbar):
-        super().__init__()
-        self._pbar = pbar
-
-    def _on_step(self):
-        # Update the progress bar:
-        self._pbar.n = self.num_timesteps
-        self._pbar.update(0)
-
-
-# this callback uses the 'with' block, allowing for correct initialisation and destruction
-class ProgressBarManager(object):
-    def __init__(self, total_timesteps):  # init object with total timesteps
-        self.pbar = None
-        self.total_timesteps = total_timesteps
-
-    def __enter__(self):  # create the progress bar and callback, return the callback
-        self.pbar = tqdm(total=self.total_timesteps)
-
-        return ProgressBarCallback(self.pbar)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):  # close the callback
-        self.pbar.n = self.total_timesteps
-        self.pbar.update(0)
-        self.pbar.close()
-
+RUN_NAME = "ppo_v1"
 
 if __name__ == "__main__":
-
     num_cpu = 4
-    vec_env = SubprocVecEnv([make_env(env_id=i + 1, rank=i) for i in range(num_cpu)])
+    vec_env = SubprocVecEnv(
+        [
+            make_env(env_id=i + 1, rank=i, tensorboard_name=RUN_NAME)
+            for i in range(num_cpu)
+        ]
+    )
 
     model = PPO(
         "MlpPolicy",
@@ -123,4 +28,4 @@ if __name__ == "__main__":
 
     with ProgressBarManager(N_GAMES) as progress_callback:
         model.learn(N_GAMES, callback=[progress_callback])
-    model.save(Path(CHECKPOINT_DIR) / "bestmodel_ppo")
+    model.save(Path(CHECKPOINT_DIR) / "bestmodel_ppo2")
