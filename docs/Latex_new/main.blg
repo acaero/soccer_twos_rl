@@ -1,5 +1,50 @@
-[0] Config.pm:307> INFO - This is Biber 2.19
-[1] Config.pm:310> INFO - Logfile is 'main.blg'
-[294] biber-MSWIN64:340> INFO - ===
-[1978] Utils.pm:410> ERROR - Cannot find 'main.bcf'!
-[1979] Biber.pm:136> INFO - ERRORS: 1
+This is BibTeX, Version 0.99d (TeX Live 2024)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: woc.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Database file #1: references.bib
+Warning--I didn't find a database entry for "todo"
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+You've used 8 entries,
+            3358 wiz_defined-function locations,
+            1201 strings with 11728 characters,
+and the built_in function-call counts, 6187 in all, are:
+= -- 273
+> -- 198
+< -- 52
++ -- 185
+- -- 48
+* -- 937
+:= -- 583
+add.period$ -- 0
+call.type$ -- 8
+change.case$ -- 34
+chr.to.int$ -- 8
+cite$ -- 8
+duplicate$ -- 654
+empty$ -- 568
+format.name$ -- 159
+if$ -- 1145
+int.to.chr$ -- 1
+int.to.str$ -- 9
+missing$ -- 95
+newline$ -- 27
+num.names$ -- 17
+pop$ -- 120
+preamble$ -- 1
+purify$ -- 32
+quote$ -- 0
+skip$ -- 214
+stack$ -- 0
+substring$ -- 147
+swap$ -- 501
+text.length$ -- 50
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 24
+warning$ -- 0
+while$ -- 16
+width$ -- 0
+write$ -- 73
+(There was 1 warning)
