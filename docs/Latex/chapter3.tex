@@ -7,45 +7,31 @@ Die in \ref{chapter:2} beschriebenen Methoden erwiesen sich bei ihrer Anwendung 
 \iffalse %temporär auskommentiert
 
 %Single Agent Methods
+\ref{fig:bild1} zeigt die erzielten Belohnungen als gleitender Mittelwert von 10 Episoden der verschiedenen Algorithmen. Es ist zu erkennen, dass die beiden On-Policy-Methoden höhere Belohnungen erzielen als die gewählten Off-Policy-Ansätze. Im Vergleich untereinander ist es eindeutig, dass der \ac{PPO}-Algorithmus die höchsten Belohnungen erzielt. Jedoch ist hier, wie auch bei den anderen, leider kein wirklicher Lerneffekt zu erkennen und die Werte schwanken nur um ein gleichbleibendes Mittel.
+Besonders im Vergleich zu der Baseline-Methode wird klar, dass die trainierten Agents bisher noch keine guten Ergebnisse erzielen können. Zwar gibt es Phasen, in denen die Baseline schlechtere Ergebnisse hervorbringt als einige der \ac{RL}-Algorithmen, jedoch ist es eindeutig, dass die Baseline im Gesamtverlauf deutlich höhere Belohnungen erzielen kann.
 
-\ref{fig:bild} zeigt den Belohnungswert der verschiedenen Algorithmen.
-
-Vergleich der verschiedenen Methoden mit Werten für die angepassten Belohnungsstruktur links und original Belohung (Tor oder Gegentor) für ein Spiel rechts.
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{img/example1.jpeg}
-	\caption{Caption}
-	\label{fig:bild}
+	\caption{Belohnungen der unterschiedlichen Single-Agent-Verfahren pro Episode mit Konfidenzintervallen}
+	\label{fig:bild1}
 \end{figure}
 
-Es ist zu erkennen
-
-
-
-\ref{fig:bild2} zeigt ein Vergleich der verschiedenen Methoden mit Werten für die angepassten Belohnungsstruktur links und original Belohung (Tor oder Gegentor) für ein Spiel rechts.
-\ref{fig:bild2} stellt .... dar. 
+\ref{fig:bild2} stellt einen Violin-Plot der Belohnungen der letzten 10.000 Episoden für die verschiedenen Agents dar und erlaubt so einen allgemeinen Vergleich der Stärke der unterschiedlichen Agents. Auch diese Grafik bestätigt die Erkenntnis, dass der \ac{PPO}-Algorithmus die besten Ergebnisse mit einem durchschnittlichen Score von 0,5 erzielen konnte. Es wird jedoch auch hier deutlich, dass, obwohl die Baseline-Methode deutlich höhere Schwankungen aufweist, diese weiterhin bessere Ergebnisse erreicht und eine durchschnittliche Belohnung von 0,7 erreicht.
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{img/example2.jpeg}
-	\caption{Caption ANDERE GRAFIK}
+	\caption{Violin-Plot der Belohnungen für die letzten 10.000 Episoden}
 	\label{fig:bild2}
 \end{figure}
-Es ist zu erkennen, dass die Off-Policy Methoden \ac{XY} und \ac{XY} die schlechtesten Ergenisse liefern. \ac{XY} zeigt einen mit ... einen mitterleren Erfolg. Die besten Ergenisse erziehlt der \ac{PPO} Algorithmus, welcher ... .
-Im Vergleich zu der entwickleten Baseline-Methode ist es ersichtlich das .... .
 
-
-Auch diese Darstellung unterstricht die zuvor beschriebenen Erkennisse. (... was hier noch neu rausgelsen wird)
-
+Eine weitere einblicksreiche Betrachtung ist die Heatmap \ref{fig:todo}, welche die Bewegungen der Agents darstellen kann.
 
 %MARL
-
-Die Anweung des \enquote{competetiv-self play} Verfahrens für das Mulit-Agent-Szenario ....
+Auch die Anwendung des \enquote{competitive-self play} Verfahrens für das Multi-Agent-Szenario wurde ausgewertet.
 
 \fi
 
 
-
-%single agent vergleich
-%line chart ppo am besten kein super lernverlauf
-%whisker
+%todo: ggf. anmerken das wir ja schon eine ziemlich starke baseline entwickelt haben die auch anders als die agents information der umgebung nutzen kann

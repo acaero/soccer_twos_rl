@@ -13,12 +13,69 @@
 \documentclass[twocolumn]{webofc}
 \usepackage[varg]{txfonts}   % Web of Conferences font
 \graphicspath{{graphics/}{graphics/arch/}{Graphics/}{./}} % Look in these folders for graphics
+
+%\usepackage[ngerman]{babel}
+%\usepackage{csquotes}
+%\usepackage[ngerman]{babel} 	        % german language
+\usepackage[german=quotes]{csquotes} 	% correct quoting using \enquote{}
+
+\usepackage{acro}
+\usepackage{amsmath}
+
+
+%%Acros
+\DeclareAcronym{RL}{
+	short = RL ,
+	long  = Reinforcement Learning
+}
+\DeclareAcronym{MARL}{
+	short = MARL ,
+	long  = Multi Agent Reinforcement Learning
+}
+\DeclareAcronym{ML}{
+	short = ML ,
+	long  = Machine Learning
+}
+\DeclareAcronym{DQN}{
+	short = DQN ,
+	long  = Deep Q-Network
+}
+\DeclareAcronym{DDQN}{
+	short = DDQN ,
+	long  = Double Deep Q-Network
+}
+\DeclareAcronym{PG}{
+	short = PG ,
+	long  = Policy Gradient
+}
+\DeclareAcronym{DPG}{
+	short = DPG ,
+	long  = Deterministic Policy Gradient
+}
+\DeclareAcronym{DDPG}{
+	short = DDPG ,
+	long  = Deep Deterministic Policy Gradient
+}
+\DeclareAcronym{PPO}{
+	short = PPO ,
+	long  = Proximal Policy Optimization
+}
+\DeclareAcronym{A2C}{
+	short = A2C ,
+	long  = Advantage Actor Critic
+}
+\DeclareAcronym{SB3}{
+	short = SB3 ,
+	long  = Stable Baselines3
+}
 %
 %
 % Put here some packages required or/and some personnal commands
 %
 %
+
 \begin{document}
+
 %
 \title{Projektbericht - Soccer Twos RL}
 %
@@ -39,47 +96,193 @@
 \institute{6373947 \and 9924680 \and 5709658 \and 7086451}
 
 \abstract{%
-	Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.   
+	Das Training von \ac{RL} Agents in simulierten Spielumgebungen ist eine verbreitete und geeignete Herangehensweise, um \ac{RL}-Verfahren zu erlernen und zu vergleichen. Oftmals finden diese Verfahren Anwendung in sehr einfachen Umgebungen mit einem Agenten und wenigen Beobachtungen. Besonders interessant und eine reizende Herausforderung ist es jedoch, wenn die Umgebung einen Realitätsbezug hat und eine erweiterte Komplexität aufweist.
+	
+	Im Rahmen dieser Gruppenarbeit wurden daher verschiedene \ac{RL}-Verfahren für die \enquote{Soccer-Twos}-Umgebung, welche ein Fußballspiel zwischen mehreren Agents simuliert, implementiert und ausgewertet. Zum einen wurden Single-Agent-Methoden betrachtet, bei denen ein Agent allein ein Tor schießen soll. Zum anderen wurde das deutlich komplexere \ac{MARL} Problem angegangen, und eine erstes Trainingsverfahren in Form von \enquote{competitive self-play} entwickelt.
+	
+	Die Evaluierung und der Vergleich mit einer einfachen Baseline-Methode ergeben, dass die Ergebnisse noch ausbaufähig sind. Jedoch zeigen die ersten Ansätze wie \ac{PPO} vielversprechende Erfolge, und auch die Betrachtung der Multi-Agent-Umgebung erweist sich als wertvoll.
 }
 %
 \maketitle
 %
 \section{Einführung} \label{intro}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.   
+%Darstellung des Problems, der Umgebung mit Regeln/ Dynamik und ggf. Vereinfachungen.
+Im Rahmen dieser Gruppenarbeit mit dem Ziel der Implementierung von erlernten \acf{RL} Verfahren wurde sich für das \enquote{Soccer Twos}-Problem \cite[p. 15]{juliani2020} entschieden. Hierbei handelt es sich um eine Umgebung die als Teil des \enquote{Unity \ac{ML} Agents Toolkit} \cite{juliani2020} veröffentlichte wurde. Es wird ein vereinfachtes Fußballspiel zwischen zwei Teams mit je zwei Spielern simuliert und das Szenario stellt somit ein \acf{MARL} Problem dar.
+Die Entscheidung für dieses \ac{RL}-Problem wurde getroffen, auf Grundlage der geigneten Anwendungsmöglichtkeit von den in der Veranstaltung behandelten Verfahren, sowie den Anspruch auf eine durchaus herausfordernde Aufgabe, welche durch die erhöhte Komplexität des Multi-Agent Problem hier gegeben ist. 
 
-Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.   
+\subsection{Soccer Twos Umgebung}
 
-Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.   
+Das Unity \ac{ML} Agents Toolkit verfügt über diverse Komponenten um \ac{RL} verwandte Aspekte in Unity-Umgebungen umzusetzen und bietet zudem eine Vielzahl an Beispiel-Umgebungen und Implementierungen von \ac{RL}-Algorithmen, welche es Spieleentwicklern oder Forschern ermöglicht \ac{RL}-Verfahren zu entwicklen und testen. 
+Die bereitgestellten Beispielumgebungen zeigen die Einsatzmöglichkeiten des Toolkits durch kleinere, zum größtenteil in 3D-Umgebungen stattfinden, Spiele auf. In den Umgebungen agieren einfache blockförmige und auch komplexere mit Gelenken ausgestattete Agenten, die alleine oder gemeinsam verschiedene Aufgaben lösen müssen. Die Beobachtungsräume dieser Agent sind größtenteils in Vektorform dargestellt sowie in einzellnen Fällen auch visuell und die Aktionsräume sind je nach Spiel entweder diskret oder kontinuierlich. Dies bietet somit eine Ausgangslage für die Anwedung von \ac{RL}-Verfahren in unterschiedlichstem Umfang.
 
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer
+Da das Toolkit eine gewisse Komplexität aufweist, wurde entschieden, das Projekt in einer ausschließlich Python-basierten Gymnasium-Umgebung umzusetzen und dementsprechend ein passendes Paket zu nutzen \cite{soccertwos}. Dieses Paket ermöglichte es, die komplette Implementierung in Python durchzuführen und die bereits bekannten Gymnasium-Schnittstellen zu nutzen.
+
+Bei dem Spiel \enquote{Soccer Twos} spielen zwei Agenten gemeinsam in einem Team gegen ein weiteres Zweier-Team Fußball. Es handelt sich hierbei um eine 3D-Spielumgebung, die in Abbildung \ref{fig:soccer_twos_3d} dargestellt ist. Das Spielfeld ist mit einer Bande begrenzt, wodurch es kein Aus gibt und das Spiel nicht unterborchen wird. Zu Beginn eines Spiels liegt der Ball in der Mitte des Feldes, und die beiden Teams starten auf ihrer jeweiligen Seite des Spielfelds. Die Agenten sind nicht unbedingt in der Lage, komplexe bzw. sehr präzise Schüsse auszuführen, sondern passen und schießen lediglich, indem sie einfach gegen den Ball laufen. Es ist das Ziel jedes Teams, den Ball in das gegnerische Tor zu befördern und gleichzeitig das eigene Tor zu schützen.
+
+%\begin{figure}[h]
+%	\centering
+%	\includegraphics[width=\columnwidth]{img/soccer_twos.png}
+%	\caption{Die visualisierte 3D-Spielumgebung von \enquote{Soccer Twos} des Unity \ac{ML}-Agents Toolkits. Die zwei Teams in Blau und Pink mit jeweils zwei blockförmigen Agenten stehen sich gegenüber, während der Fußball im Mittelkreis liegt. \cite{juliani2020}}
+%	\label{fig:soccer_twos_3d}
+%\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\columnwidth]{img/soccer_twos.png}
+  \caption{Die visualisierte 3D-Spielumgebung von \enquote{Soccer Twos} des Unity \ac{ML}-Agents Toolkits. Die zwei Teams in Blau und Pink mit jeweils zwei blockförmigen Agenten stehen sich gegenüber, während der Fußball im Mittelkreis liegt. \cite{juliani2020}}
+  \label{fig:eval}
+\end{figure}
+
+Der Aktionsraum eines Agents ist diskret und umfasst die drei Dimensionen \enquote{Vorgehen oder Zurückgehen}, \enquote{Rechtsgehen oder Linksgehen} sowie \enquote{Linksdrehen oder Rechtsdrehen}. Für jede Dimension kann ein Wert aus \(\{0,1, 2\}\) gewählt werden, wobei \(0\) für keine Ansteuerung auf dieser Dimension steht, \(1\) für die zuerst genannte Aktion und \(2\) für die zweite. Zum einfachen Vorwärtsgehen sieht der Aktionsvektor somit wie folgt aus: \([1, 0, 0]\) oder schräg Vorwärts und Links: \([1, 2, 0]\). Es gibt somit 27 mögliche diskrete Aktionen.
+Die Aktionen werden während eines Spiels für alle Agents gleichzeitig definiert und in einem 4-elementigen Dictionary übergeben.
+
+Der Beobachtungsraum besteht aus einem Vektor mit 336 Dimensionen. Diese Dimensionen ergeben sich aus mehreren Strahlen (sogenannten Ray-Casts), die die Umgebung eines Agents abtasten. Konkret werden 11 Strahlen nach vorne ausgesendet, die einen Bereich von 120° abdecken, und 3 Strahlen nach hinten, die einen Bereich von 90° abdecken. Jeder dieser Strahlen kann 6 verschiedene Objekttypen erkennen und die Entfernung zu diesen Objekten messen. Um Bewegungsabfolgen zu erkennen, werden die Daten von drei aufeinanderfolgenden Beobachtungen zusammengeführt. %todo: ggf. klären wie die Dokumentation auf 336 kommt
+
+Jedes Spiel wird entweder für 1000 Iterationen oder bis ein Tor erzielt wird gespielt. Die Belohnungsfunktion verleiht eine positive Belohnung von \(1 - \text{akkumulierte Zeitstrafe}\), wenn ein Tor erzielt wird. Zu Beginn einer Episode wird die Zeitstrafe auf \(0\) gesetzt und dann bei jedem Update um \( \frac{1}{\text{max Schritte}} \) erhöht. Diese Berechnung der Belohnung trägt somit dazu bei, dass vor allem das schnelle Schießen eines Tores unterstützt wird.  Erhält ein Team ein Gegentor, wird eine negative Belohnung von \(-1\) verhängt, um so die Verteidigung des eigenen Tores anzureizen.
+
+\subsection{Multi Agent \acl{RL}}
+
+Bei \enquote{Soccer Twos} handelt es sich um ein \ac{MARL}-Problem, welches ein Teilgebiet des normalen \ac{RL} darstellt. \ac{MARL} befasst sich mit Umgebungen, in denen mehrere Agenten agieren und somit auch miteinander interagieren können und sich durch ihre Aktionen gegenseitig beeinflussen.
+
+\ac{MARL}-Probleme können anhand zweier Interaktionstypen zwischen den Agenten klassifiziert werden \cite{10.1007/11691839_1}. In kooperativen Umgebungen agieren mehrere Agenten, um eine gemeinsame Belohnung zu maximieren. Es ist also das Ziel, dass die Agenten zusammen eine Aufgabe lösen und sich gegenseitig unterstützen. In konfrontativen Umgebungen treten mehrere Agenten gegeneinander an und versuchen, ihre eigene Belohnung zu maximieren, während die Belohnung des Gegners minimiert wird.
+Weiter ist es möglich, dass diese beiden Arten auch in gemischter Form auftreten und es somit in einer Umgebung sowohl kooperative Agenten gibt, die aber konfrontativ gegenüber anderen auftreten. Genau um eine solche gemischte Umgebungsform handelt es sich auch bei dem \enquote{Soccer Twos}-Problem. Zwei Agenten eines Teams spielen gemeinsam kooperativ gegen ein anderes Team, welches einen konfrontativen Gegner darstellt.
+
+Neben der Interaktionsart, kann eine Umgebung zudem dezentral oder zentral aufgebaut. In einer dezentralen Umgebung wird jeder Agent alleine und unabhängig von den anderen Agenten trainiert, was bedeutet, dass jeder weiterhin seine eigene Belohnungsstruktur, Beobachtungen und Aktionen hat und im Lernprozess keine Informationen zwischen den Agenten geteilt werden. Dies hat den Vorteil, dass jeder Agent alleine trainiert werden kann und die anderen Agenten einfach als Teil der Umgebung wahrnimmt. Eine derartige Struktur hat jedoch den großen Nachteil, dass sie eine nicht-stationäre Umgebung erzeugt, auf die viele \ac{RL}-Algorithmen angewiesen sind.
+In einer zentralen Umgebung hingegen gibt es eine übergeordnete Struktur, welche die Beobachtungen und Belohnungen aller Agenten sammelt und verarbeitet. Dadurch kann eine einzige gemeinsame Policy erlernt werden und das Wissen wird zwischen den Agenten geteilt \cite{Tan:1993}. %https://web.media.mit.edu/~cynthiab/Readings/tan-MAS-reinfLearn.pdf
+%Zentral und dezentral https://huggingface.co/learn/deep-rl-course/en/unit7/multi-agent-setting
+
 
 
 \section{Methoden} \label{sec-1}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.   
+%Übersicht der angewandten Methoden, Beschreibung einer Baseline-Methode.
 
-Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.   
+Zum lösen des \enquote{Soccer Twos} Problem wurden im Rahmen dieser Gruppenarbeit verschiedene, unterschiedlich komplexe, Methoden angewendet. Zunächst wurde eine einfach Baseline entwickelt mit der die späteren \ac{RL}-Algorithmen verglichen werden können. Im Folgenden wurde als erstes ein alleiniger \ac{RL}-Agent trainiert, mit dem Ziel ein Tor zu erziehlen. Anschließend wurde versucht dies nun auf das \ac{MARL}-Problem mit dem Training mehrerer Agents zu erweitern.
 
-Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.   
+\subsection{Baseline}
 
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer
+Um eine adäquate Vergleichbarkeit und Bewertung der implementierten \ac{RL}-Verfahren zu ermöglichen, wurde zunächst eine einfache Baseline-Methode für das \enquote{Soccer Twos}-Problem entworfen und implementiert. Diese Baseline beruht auf den zwei Verhaltensweisen, \enquote{Verteidigungsmodus} und \enquote{Angriffsmodus}, die auf Basis der von der Umgebung bereitgestellten Informationen durchgeführt werden.
+
+Der \enquote{Verteidigungsmodus} wird ausgelöst, sobald sich der Ball auf der Heimseite des Spielfelds befindet und somit die Gefahr für ein Gegentor besteht. Die Agents versuchen in diesem Fall, das eigene Tor zu verteidigen, indem sie sich zwischen das Tor und den Ball bewegen. Dies geschieht, indem sie sich zunächst zum Mittelpunkt zwischen dem Ball und dem Tor drehen und anschließend vorwärts zu diesem Mittelpunkt laufen. Da dies wiederholt ausgeführt wird, bewegen sich die Agents somit zwischen den Ball und das Tor und wehren Schüsse auf das eigene Tor ab.
+Der \enquote{Angriffsmodus} wird ausgeführt, sobald der Ball auf die gegnerische Spielfeldseite gelangt und somit ein Angriff auf das gegnerische Tor stattfinden kann. Die Agents drehen sich nun so lange, bis der Winkel zwischen Spieler und Ball kleiner als 30 Grad ist, und laufen dann auf den Ball zu. Befindet sich der Ball jedoch hinter dem Spieler wird die Bewegung angepasst, sodass ein Eigentor verhindert werden kann. Die Idee des \enquote{Angriffsmodus} ist es somit, dass ein Agent alles darauf setzt, einen Schuss durchzuführen und somit ein Tor zu erzielen.
+
+Diese simple Baseline, beruhend auf festen Regeln, ermöglicht ein einfaches Fußballspiel zwischen den Agents, welches nicht besonders komplex und effizient ist, aber ein vereinfachtes Spielgeschehen mit gelegentlichen erfolgreichen Torschüssen oder Abwehraktionen erlaubt. Das Ziel der im Folgenden entwickelten \ac{RL}-Verfahren ist es nun, diese einfache Spielweise zu übertreffen.
+
+
+\subsection{Single Agent RL Algorithmen}
+
+Zum Einstieg wurden für das \enquote{Soccer Twos} Problem zunächst einige grundlegende \ac{RL}-Algorithmen angewendet, die sich jedoch nur auf einen Agent beschränken. Es wurde somit eine Vereinfachung vorgenommen und nicht direkt das deutlich komplexere \ac{MARL} Problem, bei welchem mehrere Agents trainiert werden müssen, betrachtet, um zu Beginn die allgemeine Machbarkeit und Komplexität des Trainingsprozesses zu untersuchen. Im Rahmen dieser Vereinfachung werden weiter vier Agents und ein Ball zu Start des Spiels zufällig auf dem Feld platziert, jedoch kann sich nur einer dieser Agents bewegen und wird trainiert. 
+
+Insgesamt wurden zwei Off-Policy- und zwei On-Policy-Methoden für das vereinfachte, auf einen Agent beschränkte Problem angewendet. 
+Bei Off-Policy-Verfahren wird die Policy, die der Agent erlernt, unabhängig von jener behandelt, die das Verhalten während des Lernprozesses bestimmt. Das bedeutet, dass die gesammelten Erfahrungen nicht nur von der aktuellen Policy des Agenten abhängen, sondern auch von einer anderen Policy stammen können.
+Bei On-Policy-Methoden hingegen erlernt ein Agent die gleiche Policy, die auch während des Lernprozesses verwendet wird, um Aktionen zu bestimmen. Der Agent bewertet und optimiert diese Policy direkt anhand der durch diese Policy generierten Erfahrungen.
+
+%DQN
+Ein typischer Ansatz zum lösen von \ac{RL}-Problemen ist der \textbf{\ac{DQN}} Algorithms. Es handelt sich hierbei um eine Off-Policy Methode welche das Q-Learning mit tiefen neuronalen Netzwerken kombiniert, um optimale Handlungsstrategien zu erlernen. Der Kern des \ac{DQN} besteht darin, eine Q-Funktion zu approximieren, die den erwarteten zukünftigen Belohnungswert für eine gegebene Aktion in einem bestimmten Zustand angibt. %hier könnte mathematische funktion aber paper sonst schnell zu lang
+Durch kontinuierliches Training und Anpassung der Gewichte des neuronalen Netzwerks kann der Agent somit lernen, optimale Aktionen zu wählen, die langfristig zu höheren Belohnungen führen \cite{mnih2013}. 
+%Eine Erweiterung dieses Verfahrens stellt der \ac{DDQN} Algorithmus dar.  Dieser soll die Überschätzung von Q-Werten verringern, indem zwei separate Netzwerke verwendet werden. Eines dieser Netze übernimmt die Auswahl der Aktionen und das andere ist für die Bewertung dieser zuständig. Diese Trennung ermöglicht eine stabilere und genauere Schätzung der Q-Werte, was zu einem robusteren Lernprozess führt.
+
+%PG
+Ein ebenfalls verbreitete Off-Policy Methode ist der \ac{PG} Algorithmus, welcher sowohl für kontinuierlichen als auch diskrete Aktionsräume geeignet ist. Bei diesem Verfahren wird direkt eine Policy-Funktion, in Form eines Neuronalen Netzes, erlernt, die angibt, welche Aktion in einem gegebenen Zustand ausgeführt werden soll.
+Eine Erweiterung dieser Methode stellt der \ac{DPG} und auch \textbf{\ac{DDPG}} Algorithmus dar. Diese verwenden zwei Netzwerke: ein Actor-Netzwerk, das die Policy darstellt und Aktionen auswählt, und ein Critic-Netzwerk, das den Q-Wert der ausgewählten Aktionen schätzt. Es wird somit die Stabilität und Effizienz des Lernens verbessert und bietet vor allem bei komplexeren Aufgaben in kontinuierlichen Aktionsräumen Vorteile. 
+%DDPG noch detailierter?
+%ggf. nochmal darauf eingehen das wir das trotz diskreten Aktionsraum nutzen und warum
+
+%PPO
+Ein weiterer bedeutender Ansatz in diesem Bereich ist die \textbf{\ac{PPO}} Methode. \ac{PPO} ist ein On-Policy Algorithms, gehört zur Familie der \ac{PG} Methoden und zielt darauf ab, die Instabilitäten und hohen Varianzen traditioneller \ac{PG} Algorithmen zu reduzieren. Dies wird durch die Einführung eines speziellen Clipping-Mechanismus erreicht, der die Updates der Policy innerhalb eines bestimmten Bereichs hält. Dieser Mechanismus stellt sicher, dass die Änderungen an der Policy während des Trainings nicht zu drastisch sind, wodurch ein stabilerer und effizienterer Lernprozess gewährleistet wird \cite{SchulmanWDRK17}.
+
+%A2C
+Ein weiterere On-Policy Methode ist der \textbf{\ac{A2C}} Algorithmus.
+\ac{A2C} kombiniert Elemente der Actor-Critic-Architektur mit Vorteilsschätzungen (Advantage-Funktion). Der Kern der \ac{A2C} Methode besteht somit wie bei den vorherigen Methoden ebenfalls aus einem Policy- und Critic-Netzwerk. Zusätzlich wird jedoch noch eine Advantage-Funktion erlernt, welche den Vorteil einer Aktion in einem bestimmten Zustand im Vergleich zum durchschnittlichen erwarteten Wert aller möglichen Aktionen in diesem Zustand, bestimmt. Durch die Berechnung des Advantage-Werts kann der Algorithmus genauer die Unterschiede zwischen guten und schlechten Aktionen erfassen, was zu effizienteren Policy-Updates führt \cite{MnihBMGLHSK16}.
+
+%SAC
+%Ein weiterere Methode ist der \ac{SAC} Algorithms. \ac{SAC} kombiniert Elemente der Actor-Critic-Architektur mit einer Entropiemaximierung, um eine explorativere und robustere Policy zu erlernen. Der Kern der \ac{SAC} Methode besteht somit ebenfalls darin, sowohl ein Policy-Netzwerk (Actor) als auch ein Q-Netzwerk (Critic) zu erlernen. Der wesentliche Unterschied zu anderen Methoden liegt jedoch in der Maximierung der Entropie der Policy. Dies bedeutet, dass der Agent nicht nur darauf abzielt, die Belohnung zu maximieren, sondern auch die Unsicherheit seiner Entscheidungen zu berücksichtigen und somit eine vielfältigere Aktionsauswahl zu ermöglichen. Diese Entropie-Maximierung fördert eine bessere Exploration und verhindert das Verharren in suboptimalen Policys \cite{todo}. 
+
+% NN Struktur
+%Da die Ansteuerung der Agents, wie zuvor beschrieben, über einen dreielementigen Aktionsvektor mit drei möglichen Werten für jedes Element erfolgt, wurde die Struktur der bei den \ac{RL}-Algorithmen verwendeten neuronalen Netze entsprechend angepasst. Die Ausgabeschicht des Netzwerkes besteht aus neun Neuronen, die in drei Gruppen, welche jeweils eine Bewegungsdimension darstellen, aufgeteilt sind. Innerhalb jeder dieser Gruppen steht je ein Neuron für keine Ansteuerung, die erste mögliche Aktion oder die zweite mögliche Aktion. Die Auswahl der letztendlich durchgeführten Aktion für dieses Element des Aktionsvektors erfolgt durch die Wahl des Maximalwertes innerhalb dieser Gruppe.
+
+Da die Ansteuerung der Agents, wie zuvor beschrieben, über einen dreielementigen Aktionsvektor mit drei möglichen Werten für jedes Element erfolgt, wurde die Struktur der bei den \ac{RL}-Algorithmen verwendeten neuronalen Netze entsprechend angepasst. Die Ausgabeschicht des Netzwerkes besteht aus neun Neuronen, die in drei Gruppen, welche jeweils eine Bewegungsdimension darstellen, aufgeteilt sind. Innerhalb jeder dieser Gruppen wird ein Softmax angewendet und je ein Neuron steht für keine Ansteuerung, die erste mögliche Aktion. Die Auswahl der letztendlich durchgeführten Aktion für dieses Element des Aktionsvektors erfolgt durch die Wahl des Maximalwertes innerhalb dieser Gruppe.
+
+
+%Sparse Rewards
+Bereits beim Training dieser ersten Algorithmen wurden einige Auffälligkeiten beobachtet. Besonders die Tatschache das in der \enquote{Soccer-Twos}-Umgebung nur relativ selten ein Tor und somit eine Belohnung für den Agenten erziehlt wird führte zu einem sehr langsamen Lernprozess und schlechten Ergebnissen. Da es sich hier somit um eine sogennante \enquote{sparse reward} Umgebung handelt, in welcher die Belohnungen selten und unregelmäßig auftreten, wurde die Behlohnungsfunktion der Agenten angepasst. Neben einer Belohung für ein erzieltes Tor erhalten die Agenten nun fortlaufend einen Belohnung welche auf ihrem Abstand zum Ball baisert. Diese neue Behlohung nimmt \(1\) an, wenn der Abstand zum Ball minimal ist und \(0\) wenn der Abstand maximal, also 32 Einheiten, groß ist. Die neue Belohnungsstruktur der Umgebung kann somit mit folgender Formel zusammengefasst werden:
+
+%\[
+%\text{Belohnung} = \begin{cases} 
+%	1 - \text{akkumulierte Zeitstrafe} & \text{wenn ein Tor erzielt wird} \\
+%	-1 & \text{wenn ein Gegentor erzielt wird} \\
+%	\max\left(0, 1 - \frac{\text{Abstand zum Ball}}{\text{maximaler Abstand}}\right) & \text{sonst}
+%\end{cases}
+%\]
+
+\[
+\text{Belohnung} = \begin{cases} 
+	1 - \text{akkumulierte Zeitstrafe} & \text{Tor} \\
+	-1 & \text{Gegentor} \\
+	\max\left(0, 1 - \frac{\text{Abstand zum Ball}}{\text{maximaler Abstand}}\right) & \text{sonst}
+\end{cases}
+\]
+
+Durch diese Anpassung wird der Agent nun angeregt sicher schneller zum Ball zu bewegen und die Wahrscheinlichkeit das er eine sinnvolle Aktion und letztendlich ein Tor erziehlt steigt.
+
+%Stable Baseline
+Eine weitere wichtige Entscheidung, die im Laufe des Entwicklungsprozesses getroffen wurde, war die Verwendung der \ac{SB3} Bibliothek \cite{stable-baselines3} für die Implementierung der \ac{PPO} und \ac{A2C} Methoden. Es handelt sich hierbei um eine Open-Scource-Bibliothek welche robuste und effiziente Implementierungen einer Vielzahl an moderneren \ac{RL}-Algorithmen bietet.
+Zu Beginn wurden die verschiedenen Verfahren zwar eigenständig implementiert, jedoch stießen diese aufgrund der hohen Komplexität schnell an ihre Grenzen. Durch die Nutzung von \ac{SB3} konnte eine korrekte Implementierung sichergestellt werden. Zudem ermöglicht die Bibliothek den Einsatz fortschrittlicher Optimierungsverfahren und unterstützt Multiprocessing während des Trainings. Dies führte zu einer erheblichen Verbesserung der Trainingszeit und der erzielten Ergebnisse.
+
+\subsection{Multi Agent Methode}
+
+Aufbauend auf den bei der Implementierung der vorherigen Methoden gewonnenen Erkenntnissen wurde im Folgenden das \ac{MARL}-Problem betrachtet. Da es sich hierbei um ein großes Themenfeld mit vielen, teils sehr komplexen Methoden handelt und bereits beim Training in einfacheren Single-Agent-Umgebungen einige Herausforderungen auftraten, wurden die Untersuchungen im \ac{MARL}-Bereich auf die Anwendung eines \enquote{competitive self-plays} mit dem \ac{PPO}-Algorithmus beschränkt.
+
+Bei \enquote{competitive self-play} spielt und lernt ein Agent, indem er gegen sich selbst oder eine alternative Version seiner selbst antritt. Im Kontext des \enquote{Soccer-Twos}-Problems wurde eine Population an Agenten erzeugt, die in anfangs zufällig zugeordneten Spielen gegeneinander antreten. Basierend auf diesen Spielen erhalten die Agenten ein Update zu ihrem ELO-Rating, einer Bewertung, die ihre relative Spielstärke widerspiegelt, und sammeln währenddessen individuell Erfahrungen. Nach ihren Spielen werden diese Erfahrungen genutzt, um ihre jeweilige Policy zu aktualisieren. Dieses Verfahren wird wiederholt fortgesetzt, wobei jedoch nun die Zuordnung der Spielgegner aufgrund der ELO-Ratings getroffen wird. Hierdurch kann sichergestellt werden, dass ein Agent gegen einen Gegner auf ähnlichem Niveau antritt und so durch die angemessene Herausforderung des Spiels in der Lage ist, seine eigenen Fähigkeiten iterativ zu verbessern.
 
 \section{Anwendung} \label{sec-2}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.   
+%Grafische Darstellung des Lernprozesses, zentraler Ergebnisse und Beispiele der Agenten.
 
-Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.   
+Die in \ref{sec-1} beschriebenen Methoden erwiesen sich bei ihrer Anwendung auf das \enquote{Soccer Tows} Problem als unterschiedliche erfolgreich.
 
-Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.   
+%%%%%%%%%%%%%%%% 
 
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer
+%Single Agent Methods
+\ref{fig:bild1} zeigt die erzielten Belohnungen als gleitender Mittelwert von 10 Episoden der verschiedenen Algorithmen. Es ist zu erkennen, dass die beiden On-Policy-Methoden höhere Belohnungen erzielen als die gewählten Off-Policy-Ansätze. Im Vergleich untereinander ist es eindeutig, dass der \ac{PPO}-Algorithmus die höchsten Belohnungen erzielt. Jedoch ist hier, wie auch bei den anderen, leider kein wirklicher Lerneffekt zu erkennen und die Werte schwanken nur um ein gleichbleibendes Mittel.
+Besonders im Vergleich zu der Baseline-Methode wird klar, dass die trainierten Agents bisher noch keine guten Ergebnisse erzielen können. Zwar gibt es Phasen, in denen die Baseline schlechtere Ergebnisse hervorbringt als einige der \ac{RL}-Algorithmen, jedoch ist es eindeutig, dass die Baseline im Gesamtverlauf deutlich höhere Belohnungen erzielen kann.
+
+\begin{figure}[h]
+	\centering
+   \includegraphics[width=\columnwidth]{img/example1.jpeg}
+	\caption{Belohnungen der unterschiedlichen Single-Agent-Verfahren pro Episode mit Konfidenzintervallen}
+	\label{fig:bild1}
+\end{figure}
+
+\ref{fig:bild2} stellt einen Violin-Plot der Belohnungen der letzten 10.000 Episoden für die verschiedenen Agents dar und erlaubt so einen allgemeinen Vergleich der Stärke der unterschiedlichen Agents. Auch diese Grafik bestätigt die Erkenntnis, dass der \ac{PPO}-Algorithmus die besten Ergebnisse mit einem durchschnittlichen Score von 0,5 erzielen konnte. Es wird jedoch auch hier deutlich, dass, obwohl die Baseline-Methode deutlich höhere Schwankungen aufweist, diese weiterhin bessere Ergebnisse erreicht und eine durchschnittliche Belohnung von 0,7 erreicht.
+
+\begin{figure}[h]
+	\centering
+   \includegraphics[width=\columnwidth]{img/example2.jpeg}
+	\caption{Violin-Plot der Belohnungen für die letzten 10.000 Episoden}
+	\label{fig:bild2}
+\end{figure}
+
+Eine weitere einblicksreiche Betrachtung ist die Heatmap \ref{fig:bild3}, welche die Bewegungen der Agents darstellen kann.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\columnwidth]{img/example3.jpeg}
+	\caption{Heatmap}
+	\label{fig:bild3}
+\end{figure}
+
+%MARL
+Auch die Anwendung des \enquote{competitive-self play} Verfahrens für das Multi-Agent-Szenario wurde ausgewertet.
+
+
+%%%%%%%%%%%%%%%%%%
 
 \section{Abschluss} \label{sec-3}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.   
+% Bewertung und Einordnung der Ergebnisse, Limitierungen der Methoden (z.B. aufgrund begrenzter Computing-Ressourcen), mögliche Erweiterungen.
 
-Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.   
+Die in dieser Gruppenarbeit angewendeten und untersuchten Verfahren haben gezeigt, dass \ac{RL}-Methoden erfolgreich eingesetzt werden können, um in einer simulierten Fußball-Umgebung, in der ein Spieler das Ziel hat, ein Tor zu schießen und auch kompetitiv gegen andere Spieler antreten kann, einen \ac{RL}-Agenten zu trainieren. Besonders der \ac{PPO}-Algorithmus erwies sich als erfolgreich, und auch die Anwendung von \enquote{competitive self-play} im \ac{MARL}-Kontext zeigt erste Potenziale auf.
 
-Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.   
+Nichtsdestotrotz muss angemerkt werden, dass das Verhalten der Agenten im Vergleich zu einem echten Fußballspiel oder auch zu anderen, für die \enquote{Soccer-Twos}-Umgebung veröffentlichungen Implementierungen \cite{todo}, noch zu wünschen übrig lässt. Die Anwendung der erlernten \ac{RL}-Verfahren und das Training der Agenten war in dieser Gruppenarbeit aufgrund der sehr komplexen Umgebung, mit einer Vielzahl an Beobachtungen und der zusätzlichen Schwierigkeit des Multi-Agenten-Szenarios, eine große Herausforderung. Auch die verfügbaren Trainingsressourcen haben den Erfolg der Ergebnisse eingeschränkt.
 
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer
+Auch wenn das Ergebnis dieser Gruppenarbeit somit vom Wunschszenario eines perfekten Fußballteams aus \ac{RL}-Agenten etwas entfernt ist, wurden fortschrittliche \ac{RL}-Methoden implementiert und eine einblicksreiche Auswertung mit einem Vergleich der unterschiedlichen Verfahren erstellt. Da vor allem die Vereinfachung auf eine Single-Agent-Umgebung und die Anwendung des \ac{PPO}-Algorithmus erste, durchaus zufriedenstellende, Ergebnisse erbringt, zeigt die Ausarbeitung Potenzial für mögliche Erweiterungen auf. So könnte zum einen das Training dieses bestehenden erfolgreichen Single-Agent-RL-Verfahrens ausgeweitet und durch erhöhte Computing-Ressourcen verbessert werden. Zum anderen ist es auch weiter denkbar, das Multi-Agenten-Szenario tiefer zu betrachten und komplexere Verfahren wie MADDPG oder ?? zu untersuchen.
 
 %\begin{figure}
 %  \centering
