@@ -7,7 +7,7 @@ from src.env import make_env, ProgressBarManager
 from src.config import N_GAMES, LOG_DIR, CHECKPOINT_DIR
 
 
-RUN_NAME = "a2c_v5"
+RUN_NAME = "a2c_proximity_final_random"
 
 if __name__ == "__main__":
     num_cpu = 4
@@ -30,4 +30,4 @@ if __name__ == "__main__":
 
     with ProgressBarManager(N_GAMES) as progress_callback:
         model.learn(N_GAMES, callback=[progress_callback])
-    model.save(Path(CHECKPOINT_DIR) / "bestmodel_a2c_5")
+    model.save(Path(CHECKPOINT_DIR) / "a2c_bestmodel")

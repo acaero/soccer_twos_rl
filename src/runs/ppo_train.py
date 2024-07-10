@@ -7,7 +7,7 @@ from src.env import make_env, ProgressBarManager
 from src.config import N_GAMES, LOG_DIR, CHECKPOINT_DIR
 
 
-RUN_NAME = "ppo_v1"
+RUN_NAME = "ppo_proximity_final_random"
 
 if __name__ == "__main__":
     num_cpu = 4

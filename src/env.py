@@ -27,15 +27,16 @@ class SoccerTwosEnv(gym.Env):
         return np.array(out[0])
 
     def step(self, action):
-        action = {0: action, 1: [0, 0, 0], 2: [0, 0, 0], 3: [0, 0, 0]}
+        actions = {0: action, 1: [0, 0, 0], 2: [0, 0, 0], 3: [0, 0, 0]}
 
-        obs, rewards, dones, info = self.env.step(action)
+        obs, rewards, dones, info = self.env.step(actions)
 
+        # kommentiere die 5 Zeilen aus für ohne BaselineAgent
         agent = BaselineAgent()
         actions = {player_id: agent.act(info, player_id) for player_id in range(4)}
         actions[0] = action
         self.env.reset()
-        obs, rewards, dones, info = self.env.step(action)
+        obs, rewards, dones, info = self.env.step(actions)
 
         self.iteration += 1
         if self.logger is not None:
