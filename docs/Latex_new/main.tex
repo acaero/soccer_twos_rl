@@ -130,7 +130,7 @@ Bei dem Spiel \enquote{Soccer Twos} spielen zwei Agenten gemeinsam in einem Team
   \centering
   \includegraphics[width=\columnwidth]{img/soccer_twos.png}
   \caption{Die visualisierte 3D-Spielumgebung von \enquote{Soccer Twos} des Unity \ac{ML}-Agents Toolkits. Die zwei Teams in Blau und Pink mit jeweils zwei blockförmigen Agenten stehen sich gegenüber, während der Fußball im Mittelkreis liegt. \cite{juliani2020}}
-  \label{fig:eval}
+  \label{fig:soccer_twos_3d}
 \end{figure}
 
 Der Aktionsraum eines Agents ist diskret und umfasst die drei Dimensionen \enquote{Vorgehen oder Zurückgehen}, \enquote{Rechtsgehen oder Linksgehen} sowie \enquote{Linksdrehen oder Rechtsdrehen}. Für jede Dimension kann ein Wert aus \(\{0,1, 2\}\) gewählt werden, wobei \(0\) für keine Ansteuerung auf dieser Dimension steht, \(1\) für die zuerst genannte Aktion und \(2\) für die zweite. Zum einfachen Vorwärtsgehen sieht der Aktionsvektor somit wie folgt aus: \([1, 0, 0]\) oder schräg Vorwärts und Links: \([1, 2, 0]\). Es gibt somit 27 mögliche diskrete Aktionen.
@@ -139,10 +139,17 @@ Die Aktionen werden für einen Schritt des Spiels für alle Agents gleichzeitig 
 Der Beobachtungsraum besteht aus einem Vektor mit 336 Dimensionen. Diese Dimensionen ergeben sich aus mehreren Strahlen (sogenannten Ray-Casts), die die Umgebung eines Agents abtasten. Konkret werden elf Strahlen nach vorne ausgesendet, die einen Bereich von 120° abdecken, und drei Strahlen nach hinten, die einen Bereich von 90° abdecken. Jeder dieser Strahlen kann sechs verschiedene Objekttypen erkennen und die Entfernung zu diesen Objekten messen. Um Bewegungsabfolgen zu erkennen, werden die Daten von drei aufeinanderfolgenden Beobachtungen zusammengeführt. Die Identifikation der einzelnen Objekte die getroffen werden, erfolgt über einen one-hot-encoded Vektor. Der Objekttyp des Gegners wird dabei zweimal geführt, wodurch eine Differenzierung der Gegner stattfinden kann. Insgesamt beläuft sich die Dimension des Detektionsvektor eines einzelnen Strahls damit auf die Größe acht. Die Berechnungsvorschrift lautet:
 
 \[
-336 = (14 \text{Strahlen} \times (7 + 1 \text{Entfernung}) \times 3 \text{Beobachtungen})
+336 = (14 \text{ Strahlen} \cdot (7 + 1 \text{ Entfernung}) \cdot 3 \text{ Beobachtungen})
 \]
 
-Jedes Spiel wird entweder für 1000 Iterationen oder bis ein Tor erzielt wird gespielt. Die Belohnungsfunktion verleiht eine positive Belohnung von \(1 - \text{akkumulierte Zeitstrafe}\), wenn ein Tor erzielt wird. Zu Beginn einer Episode wird die Zeitstrafe auf \(0\) gesetzt und dann bei jedem Update um \( \frac{1}{\text{max Schritte}} \) erhöht. Diese Berechnung der Belohnung trägt somit dazu bei, dass vor allem das schnelle Schießen eines Tores unterstützt wird.  Erhält ein Team ein Gegentor, wird eine negative Belohnung von \(-1\) verhängt, um so die Verteidigung des eigenen Tores anzureizen.
+\begin{figure}
+	\centering
+	\includegraphics[width=\columnwidth]{img/agent_observations.png}
+	\caption{Eine Visualisierung des Beobachtungsraum des Agent mit den genutzten Ray-Casts.  \cite{soccertwos}}
+	\label{fig:ray-casts}
+\end{figure}
+
+Jedes Spiel wird entweder für 1000 Iterationen oder bis ein Tor erzielt wird gespielt. Die Belohnungsfunktion verleiht eine positive Belohnung von \mbox{\(1 - \text{akkumulierte Zeitstrafe}\)}, wenn ein Tor erzielt wird. Zu Beginn einer Episode wird die Zeitstrafe auf \(0\) gesetzt und dann bei jedem Update um \( \frac{1}{\text{max Schritte}} \) erhöht. Diese Berechnung der Belohnung trägt somit dazu bei, dass vor allem das schnelle Schießen eines Tores unterstützt wird.  Erhält ein Team ein Gegentor, wird eine negative Belohnung von \(-1\) verhängt, um so die Verteidigung des eigenen Tores anzureizen.
 
 \subsection{Multi Agent \acl{RL}}
 
@@ -241,22 +248,22 @@ Bei \enquote{competitive self-play} spielt und lernt ein Agent, indem er gegen s
 \section{Anwendung} \label{sec-2}
 %Grafische Darstellung des Lernprozesses, zentraler Ergebnisse und Beispiele der Agenten.
 
-Die in \ref{sec-1} beschriebenen Methoden erwiesen sich bei ihrer Anwendung auf das \enquote{Soccer Tows} Problem als unterschiedliche erfolgreich.
+Die in Kapitel \ref{sec-1} beschriebenen Methoden erwiesen sich bei ihrer Anwendung auf das \enquote{Soccer Tows} Problem als unterschiedliche erfolgreich.
 
 %%%%%%%%%%%%%%%%
 
 %Single Agent Methods
-\ref{fig:bild1} zeigt die erzielten Belohnungen als gleitender Mittelwert von 10 Episoden der verschiedenen Algorithmen. Es ist zu erkennen, dass die beiden On-Policy-Methoden höhere Belohnungen erzielen als die gewählten Off-Policy-Ansätze. Im Vergleich untereinander ist es eindeutig, dass der \ac{PPO}-Algorithmus die höchsten Belohnungen erzielt. Jedoch ist hier, wie auch bei den anderen, leider kein wirklicher Lerneffekt zu erkennen und die Werte schwanken nur um ein gleichbleibendes Mittel.
+Abbildung \ref{fig:bild1} zeigt die erzielten Belohnungen als gleitender Mittelwert von 10 Episoden der verschiedenen Algorithmen. Es ist zu erkennen, dass die beiden On-Policy-Methoden höhere Belohnungen erzielen als die gewählten Off-Policy-Ansätze. Im Vergleich untereinander ist es eindeutig, dass der \ac{PPO}-Algorithmus die höchsten Belohnungen erzielt. Jedoch ist hier, wie auch bei den anderen, leider kein wirklicher Lerneffekt zu erkennen und die Werte schwanken nur um ein gleichbleibendes Mittel.
 Besonders im Vergleich zu der Baseline-Methode wird klar, dass die trainierten Agents bisher noch keine guten Ergebnisse erzielen können. Zwar gibt es Phasen, in denen die Baseline schlechtere Ergebnisse hervorbringt als einige der \ac{RL}-Algorithmen, jedoch ist es eindeutig, dass die Baseline im Gesamtverlauf deutlich höhere Belohnungen erzielen kann.
 
 \begin{figure}[h]
 	\centering
-   \includegraphics[width=\columnwidth]{img/example1.jpeg}
+    \includegraphics[width=\columnwidth]{img/example1.jpeg}
 	\caption{Belohnungen der unterschiedlichen Single-Agent-Verfahren pro Episode mit Konfidenzintervallen}
 	\label{fig:bild1}
 \end{figure}
 
-\ref{fig:bild2} stellt einen Violin-Plot der Belohnungen der letzten 10.000 Episoden für die verschiedenen Agents dar und erlaubt so einen allgemeinen Vergleich der Stärke der unterschiedlichen Agents. Auch diese Grafik bestätigt die Erkenntnis, dass der \ac{PPO}-Algorithmus die besten Ergebnisse mit einem durchschnittlichen Score von 0,5 erzielen konnte. Es wird jedoch auch hier deutlich, dass, obwohl die Baseline-Methode deutlich höhere Schwankungen aufweist, diese weiterhin bessere Ergebnisse erreicht und eine durchschnittliche Belohnung von 0,7 erreicht.
+Abbildung \ref{fig:bild2} stellt einen Violin-Plot der Belohnungen der letzten 10.000 Episoden für die verschiedenen Agents dar und erlaubt so einen allgemeinen Vergleich der Stärke der unterschiedlichen Agents. Auch diese Grafik bestätigt die Erkenntnis, dass der \ac{PPO}-Algorithmus die besten Ergebnisse mit einem durchschnittlichen Score von 0,5 erzielen konnte. Es wird jedoch auch hier deutlich, dass, obwohl die Baseline-Methode deutlich höhere Schwankungen aufweist, diese weiterhin bessere Ergebnisse erreicht und eine durchschnittliche Belohnung von 0,7 erreicht.
 
 \begin{figure}[h]
 	\centering
@@ -265,7 +272,7 @@ Besonders im Vergleich zu der Baseline-Methode wird klar, dass die trainierten A
 	\label{fig:bild2}
 \end{figure}
 
-Eine weitere einblicksreiche Betrachtung ist die Heatmap \ref{fig:bild3}, welche die Bewegungen der Agents darstellen kann.
+Eine weitere einblicksreiche Betrachtung ist die Heatmap in Abbildung \ref{fig:bild3}, welche die Bewegungen der Agents darstellen kann.
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\columnwidth]{img/example3.jpeg}
@@ -284,9 +291,11 @@ Auch die Anwendung des \enquote{competitive-self play} Verfahrens für das Multi
 
 Die in dieser Gruppenarbeit angewendeten und untersuchten Verfahren haben gezeigt, dass \ac{RL}-Methoden erfolgreich eingesetzt werden können, um in einer simulierten Fußball-Umgebung, in der ein Spieler das Ziel hat, ein Tor zu schießen und auch kompetitiv gegen andere Spieler antreten kann, einen \ac{RL}-Agenten zu trainieren. Besonders der \ac{PPO}-Algorithmus erwies sich als erfolgreich, und auch die Anwendung von \enquote{competitive self-play} im \ac{MARL}-Kontext zeigt erste Potenziale auf.
 
-Nichtsdestotrotz muss angemerkt werden, dass das Verhalten der Agenten im Vergleich zu einem echten Fußballspiel oder auch zu anderen, für die \enquote{Soccer-Twos}-Umgebung veröffentlichungen Implementierungen \cite{todo}, noch zu wünschen übrig lässt. Die Anwendung der erlernten \ac{RL}-Verfahren und das Training der Agenten war in dieser Gruppenarbeit aufgrund der sehr komplexen Umgebung, mit einer Vielzahl an Beobachtungen und der zusätzlichen Schwierigkeit des Multi-Agenten-Szenarios, eine große Herausforderung. Auch die verfügbaren Trainingsressourcen haben den Erfolg der Ergebnisse eingeschränkt.
+Nichtsdestotrotz muss angemerkt werden, dass das Verhalten der Agenten im Vergleich zu einem echten Fußballspiel 
+%oder auch zu anderen, für die \enquote{Soccer-Twos}-Umgebung veröffentlichungen Implementierungen \cite{todo}, 
+noch zu wünschen übrig lässt. Die Anwendung der erlernten \ac{RL}-Verfahren und das Training der Agenten war in dieser Gruppenarbeit aufgrund der sehr komplexen Umgebung, mit einer Vielzahl an Beobachtungen und der zusätzlichen Schwierigkeit des Multi-Agenten-Szenarios, eine große Herausforderung. Auch die verfügbaren Trainingsressourcen haben den Erfolg der Ergebnisse eingeschränkt.
 
-Auch wenn das Ergebnis dieser Gruppenarbeit somit vom Wunschszenario eines perfekten Fußballteams aus \ac{RL}-Agenten etwas entfernt ist, wurden fortschrittliche \ac{RL}-Methoden implementiert und eine einblicksreiche Auswertung mit einem Vergleich der unterschiedlichen Verfahren erstellt. Da vor allem die Vereinfachung auf eine Single-Agent-Umgebung und die Anwendung des \ac{PPO}-Algorithmus erste, durchaus zufriedenstellende, Ergebnisse erbringt, zeigt die Ausarbeitung Potenzial für mögliche Erweiterungen auf. So könnte zum einen das Training dieses bestehenden erfolgreichen Single-Agent-RL-Verfahrens ausgeweitet und durch erhöhte Computing-Ressourcen verbessert werden. Zum anderen ist es auch weiter denkbar, das Multi-Agenten-Szenario tiefer zu betrachten und komplexere Verfahren wie MADDPG oder ?? zu untersuchen.
+Auch wenn das Ergebnis dieser Gruppenarbeit somit vom Wunschszenario eines perfekten Fußballteams aus \ac{RL}-Agenten etwas entfernt ist, wurden fortschrittliche \ac{RL}-Methoden implementiert und eine einblicksreiche Auswertung mit einem Vergleich der unterschiedlichen Verfahren erstellt. Da vor allem die Vereinfachung auf eine Single-Agent-Umgebung und die Anwendung des \ac{PPO}-Algorithmus erste, durchaus zufriedenstellende, Ergebnisse erbringt, zeigt die Ausarbeitung Potenzial für mögliche Erweiterungen auf. So könnte zum einen das Training dieses bestehenden erfolgreichen Single-Agent-RL-Verfahrens ausgeweitet und durch erhöhte Computing-Ressourcen verbessert werden. Zum anderen ist es auch weiter denkbar, das Multi-Agenten-Szenario tiefer zu betrachten und komplexere Verfahren wie MADDPG oder andere zu untersuchen.
 
 %\begin{figure}
 %  \centering
