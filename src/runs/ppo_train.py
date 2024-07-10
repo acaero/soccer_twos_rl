@@ -25,7 +25,13 @@ if __name__ == "__main__":
         tensorboard_log=LOG_DIR + "/tensorboard/",
         device="auto",
     )
+    reset = False
+    # model = PPO.load(
+    #     path=r"out\checkpoints\bestmodel_ppo.zip", env=vec_env, device="auto", verbose=1
+    # )
+    # model.set_parameters(load_path_or_dict=r"out\checkpoints\bestmodel_ppo.zip")
+    # reset = True
 
     with ProgressBarManager(N_GAMES) as progress_callback:
-        model.learn(N_GAMES, callback=[progress_callback])
+        model.learn(N_GAMES, callback=[progress_callback], reset_num_timesteps=reset)
     model.save(Path(CHECKPOINT_DIR) / "bestmodel_ppo2")

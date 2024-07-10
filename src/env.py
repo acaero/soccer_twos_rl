@@ -41,7 +41,7 @@ class SoccerTwosEnv(gym.Env):
                 action,
             )
         return (
-            np.array(obs[0]),
+            np.array([np.array(obs[0]), np.array(obs[2])]),
             float(rewards[0]) + shape_rewards(info, 0),
             dones["__all__"],
             info,
