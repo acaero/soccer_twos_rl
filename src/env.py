@@ -9,6 +9,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 
 from src.utils import shape_rewards
 from src.logger import CustomLogger
+from src.agents.baseline_agent import BaselineAgent
 
 
 class SoccerTwosEnv(gym.Env):
@@ -27,6 +28,13 @@ class SoccerTwosEnv(gym.Env):
 
     def step(self, action):
         action = {0: action, 1: [0, 0, 0], 2: [0, 0, 0], 3: [0, 0, 0]}
+
+        obs, rewards, dones, info = self.env.step(action)
+
+        agent = BaselineAgent()
+        actions = {player_id: agent.act(info, player_id) for player_id in range(4)}
+        actions[0] = action
+        self.env.reset()
         obs, rewards, dones, info = self.env.step(action)
 
         self.iteration += 1
@@ -41,7 +49,7 @@ class SoccerTwosEnv(gym.Env):
                 action,
             )
         return (
-            np.array([np.array(obs[0]), np.array(obs[2])]),
+            np.array(obs[0]),
             float(rewards[0]) + shape_rewards(info, 0),
             dones["__all__"],
             info,

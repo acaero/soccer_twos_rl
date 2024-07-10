@@ -25,8 +25,9 @@ if __name__ == "__main__":
         verbose=1,
         tensorboard_log=LOG_DIR + "/tensorboard/",
         device="auto",
+        gamma=0.999,
     )
 
-    with ProgressBarManager(100_000) as progress_callback:
-        model.learn(100_000, callback=[progress_callback])
+    with ProgressBarManager(N_GAMES) as progress_callback:
+        model.learn(N_GAMES, callback=[progress_callback])
     model.save(Path(CHECKPOINT_DIR) / "bestmodel_a2c_5")

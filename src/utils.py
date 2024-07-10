@@ -21,7 +21,7 @@ def shape_rewards(info, player_id):
     # print("distance: ", distance)
 
     # Calculate the proximity reward using an exponential function
-    proximity_reward = normalized_distance
+    proximity_reward = normalized_distance / 20
     # print("reward: ", normalized_distance)
     # Add this to your existing reward
     extra_reward += proximity_reward

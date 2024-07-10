@@ -24,6 +24,7 @@ if __name__ == "__main__":
         verbose=1,
         tensorboard_log=LOG_DIR + "/tensorboard/",
         device="auto",
+        gamma=0.999,
     )
     reset = False
     # model = PPO.load(
@@ -33,5 +34,5 @@ if __name__ == "__main__":
     # reset = True
 
     with ProgressBarManager(N_GAMES) as progress_callback:
-        model.learn(N_GAMES, callback=[progress_callback], reset_num_timesteps=reset)
-    model.save(Path(CHECKPOINT_DIR) / "bestmodel_ppo2")
+        model.learn(N_GAMES, callback=[progress_callback])
+    model.save(Path(CHECKPOINT_DIR) / "bestmodel_ppo")
