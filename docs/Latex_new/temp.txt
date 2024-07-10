@@ -1,0 +1,8 @@
+\begin{figure}[hbt!]
+% Use the relevant command for your figure-insertion program
+% to insert the figure file.
+\centering
+\includegraphics[width=\columnwidth,clip]{graphics/workflow.png}
+\caption{Workflow}
+\label{fig-1}       % Give a unique label
+\end{figure}

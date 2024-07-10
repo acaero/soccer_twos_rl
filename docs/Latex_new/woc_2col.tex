@@ -1,0 +1,234 @@
+%%%%%%%%%%%%%%%%%%%%%%% file template.tex %%%%%%%%%%%%%%%%%%%%%%%%%
+% $Id: woc_2col.tex 158 2017-01-19 23:08:23Z foley $
+% $URL: https://repository.cs.ru.is/svn/template/tvd/journal/matec-woc/woc_2col.tex $
+% 
+% This is a template file for Web of Conferences Journal
+%
+% Copy it to a new file with a new name and use it as the basis
+% for your article
+%
+% This template has been updated to match the Word Template's contents
+% by Joseph T. Foley < foley AT RU dot IS >
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%% EDP Science %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%\documentclass[option]{webofc}
+%%% "twocolumn" for typesetting an article in two columns format (default one column)
+%
+\documentclass[twocolumn]{webofc}
+\usepackage[varg]{txfonts}   % Web of Conferences font
+\usepackage{booktabs}
+\usepackage{array} %% needed for advanced table manipulation
+%% Column types from http://tex.stackexchange.com/questions/54069/table-with-text-wrapping
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\graphicspath{{graphics/}{graphics/arch/}{Graphics/}{./}} % Look in these folders for graphics
+%
+% Put here some packages required or/and some personnal commands
+%
+%
+\begin{document}
+%
+\title{Web of Conferences --- A4 paper size, two columns format}
+%
+% subtitle is optionnal
+%
+%%%\subtitle{Do you have a subtitle?\\ If so, write it here}
+
+\author{\firstname{Isaline} \lastname{Augustino}\inst{1,3}\fnsep\thanks{\email{author@e-mail.org}} \and
+        \firstname{Isabelle} \lastname{Houlbert}\inst{2}\and
+        \firstname{Agnés} \lastname{Henri}\inst{3}
+        % etc.
+      }
+
+\institute{EDP Sciences, Editorial Department, 91944 Les Ulis Cedex A, France
+\and
+           EDP Sciences, Production Department, 91944 Les Ulis Cedex A, France
+          }
+
+\abstract{%
+  You should leave 8 mm of space above the abstract and 10 mm after the abstract.
+  The heading Abstract should be typed in bold 9-point Times.
+  The body of the abstract should be typed in normal 9-point Arial in a single paragraph, immediately following the heading.
+  The text should be set to 1 line spacing.
+  The abstract should be centred across the page, indented 17 mm from the left and right page margins and justified.
+  It should not normally exceed 200 words.
+}
+%
+\maketitle
+%
+\section*{README!}\label{sec:readme}
+\textbf{Template Author's Note:  Much of this template is taken from the Microsoft Word Template.
+  This means that most of the instructions described are only if you are using MS Word.
+  If you are using \LaTeX{}, all the formatting has been taken care of by the style enforced by the \path{webofc.cls} file.
+  This includes formatting and placement of the citations, as long as you fill in the BibTeX file \path{references.bib} correctly.
+  If you have \path{woc.bst} it will ensure that the citations meet the formatting required by MATEC Web of Science.
+  Enjoy!
+}
+\section{Page layout}\label{sec:page-layout}
+Use A4 paper size ($210 \times 297$ mm) and adjust the margins to those shown in Table~\ref{tab:word-margins}.
+The final printed area will be $172 \times 252$ mm.
+
+\begin{table}
+  \centering
+  \caption{Setting Word's margins}\label{tab:word-margins}
+\begin{tabular}{cr}\toprule  % (c)entered (r)ight-justified
+  \textbf{Margin} &\textbf{mm}\\\midrule
+  Top &25\\
+  Bottom &20\\
+  Left &20\\
+  Right &20\\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+Use a two-column format, and set the spacing between the columns at 8 mm.
+Do not add any page numbers.
+
+\subsection{Formatting the title, authors and affiliations}\label{sec:formatting}
+\subsubsection{Formatting the title}\label{sec:formatting-title}
+The title is set in bold 16-point Arial, justified.
+The first letter of the title should be capitalised with the rest in lower case.
+You should leave 35 mm of space above the title and 6 mm after the title.
+\subsubsection{Formatting author names and author affiliations}\label{sec:formatting-author}
+The style for the names is First Name, typed in italic 10-point Times, then Last Name, typed in 10-point Times, with a comma after all except the last author, which is separated by comma + ``and''.
+Do not use academic titles.
+%% Notice that paragraph breaks are done with a blank line between paragraphs
+
+Affiliations of authors should be typed in 9-point Times.
+They should be preceded by a numerical superscript corresponding to the same superscript after the name of the author concerned.
+Please ensure that affiliations are as full and complete as possible and include the country.
+\subsection{Formatting the text}\label{sec:formatting-text}
+The text of your paper should be formatted as follows:
+\begin{itemize}
+\item 10-point Times, Times Roman or Times New Roman.
+\item The text should be set to single line spacing.
+\item Paragraphs should be justified. 
+\item The first paragraph after a section or subsection should not be indented;
+  subsequent paragraphs should be indented by 5 mm.
+\end{itemize}
+
+\begin{table}
+  \centering
+  \caption{Formatting sections, subsections and subsubsections}\label{tab:format-sec}
+  \begin{tabular}{cp{16mm}p{18mm}p{17mm}}\toprule
+             &Font &Spacing &numbering\\\midrule
+    Section & 12-point \textbf{Arial bold} &6~mm before 3~mm after &1, 2, 3, etc.\\
+    subsection & 10-point \textbf{Arial bold} &6~mm before 3~mm after &1.1, 1.2, 1.3, etc.\\
+    subsection & 10-point \textit{Arial italic} &6~mm before 3~mm after &1.1.1, 1.2.1, 1.3.1, etc.\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The use of sections to divide the text of the paper is optional and left as a decision for the author.
+Where the author wishes to divide the paper into sections the formatting shown in Table~\ref{tab:format-sec} should be used.
+
+\section{Figures and tables}\label{sec:fig-tables}
+Figures and tables, as originals of good quality and well contrasted, are to be in their final form, ready for reproduction, pasted in the appropriate place in the text.
+Try to ensure that the size of the text in your figures is approximately the same size as the main text (10 point).
+Try to ensure that lines are no thinner than 0.25 point. 
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\columnwidth]{grey-square}
+  \caption{Caption of the Figure 1. Below the figure.}
+\end{figure}
+
+\subsection{Captions/numbering}\label{sec:cap-num}
+Captions should be typed in 9-point Times. They should be centred above the tables and flush left beneath the figures.
+\subsection{Positioning}\label{sec:positioning}
+Place the figure as close as possible after the point where it is first referenced in the text. If there is a large number of figures and tables it might be necessary to place some before their text citation. If a figure or table is too large to fit into one column, it can be centred across both columns at the top or the bottom of the page.
+
+\subsection{Colour illustrations}\label{sec:colour-illustrations}
+You are free to use colour illustrations for the online version of the proceedings but any print version will be printed in black and white unless special arrangements have been made with the conference organiser.
+Please check with the conference organiser whether or not this is the case.
+If the print version will be black and white only, you should check your figure captions carefully and remove any reference to colour in the illustration and text.
+In addition, some colour figures will degrade or suffer loss of information when converted to black and white, and this should be taken into account when preparing them.
+%% Bug in template?  No space here --foley
+\vspace{1.5\baselineskip}
+\section{Equations and mathematics}\label{sec:equat-math}
+Equations should be centred and should be numbered with the number on the right-hand side.
+\begin{gather}
+  T_{s}(l,t) = T_{g}l,t)\label{eq:1}\\
+  T_{s}(l,t) = T_{g}(l,t)T_{b}(x \rightarrow -\beta, t) = 0\label{eq:2}
+\end{gather}
+
+Use italics for variables ($u$) and bold (\textbf{u}) for vectors.
+The order for brackets should be {[()]}, except where brackets have special significance. 
+
+The acknowledgements should be typed in 9-point Times, without title.
+
+\section*{References}
+Online references will be linked to their original source, only if possible.
+To enable this linking extra care should be taken when preparing reference lists.
+
+References should be cited in the text by placing sequential numbers in brackets (for example, [1], [2, 5, 7], [8--10]).
+They should be numbered in the order in which they are cited.
+A complete reference should provide enough information to locate the article.
+References to printed journal articles should typically contain:
+\begin{itemize}
+\item The authors, in the form: initials of the first names followed by last name (only the first letter capitalized with full stops after the initials),
+\item The journal title (abbreviated), 
+\item The volume number (bold type),
+\item The article number or the page numbers,
+\item The year of publication (in brackets). 
+\end{itemize}
+Authors should use the forms shown in Table~\ref{tab:font-styles-reference-journal} in the final reference list.
+
+\begin{table}
+  \centering
+  \caption{Font styles for a reference to a journal article.}
+  \label{tab:font-styles-reference-journal}
+  \begin{tabular}{C{25mm}p{25mm}}\toprule
+    \textbf{Element} &\textbf{Style}\\\midrule
+    Authors &Normal, Initials followed by last name\\
+    Journal title & Normal, Abbreviated\\
+    Book title, Proceedings title & Italic\\
+    Volume number &Bold\\
+    Page number &Normal\\
+    Year &Normal, In brackets\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Here are some examples~\cite{mecke2004deformability, rabha2012chemical, deluca2009progress, delillo2008sedimentation}.
+In addition, some Axiomatic Design references of interest can be found in~\cite{cochran2016msdd, suh2005complexity, thompson2013classification}.  
+\textbf{There was an error in the original template where URLs would format incorrectly.  
+If this has been corrected, then \cite{bragason2015parachuterelease} will format nicely.}
+% of note, the template example has a nonexistant reference #3
+% Deluca didn't produce a book on his own only as an editor as part of a series
+% --foley
+
+%
+% BibTeX or Biber users please use (the style is already called in the class, ensure that the "woc.bst" style is in your local directory)
+% \bibliography{name or your bibliography database}
+\bibliography{references}
+
+
+
+
+
+\end{document}
+
+% end of file template.tex
+%%%%%%%%%%%%%%%%%%%% TeXStudio Magic Comments %%%%%%%%%%%%%%%%%%%%%
+%% These comments that start with "!TeX" modify the way TeXStudio works
+%% For details see http://texstudio.sourceforge.net/manual/current/usermanual_en.html   Section 4.10
+%%
+%% What encoding is the file in?
+% !TeX encoding = UTF-8
+%% What language should it be spellchecked?
+% !TeX spellcheck = en_US
+%% What program should I compile this document with?
+% !TeX program = pdflatex
+%% Which program should be used for generating the bibliography?
+% !TeX TXS-program:bibliography = txs:///bibtex
+%% This also sets the bibliography program for TeXShop and TeXWorks
+% !BIB program = bibtex
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
