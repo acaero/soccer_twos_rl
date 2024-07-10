@@ -1,3 +1,4 @@
+import struct
 import numpy as np
 import json
 from src.config import REWARD_SHAPING
@@ -166,3 +167,21 @@ class ParallelSoccerEnv:
             pipe.send(("close", None))
         for p in self.processes:
             p.join()
+
+
+def compress_floats(a: float, b: float) -> float:
+    """Compress two 32-bit floats into one 64-bit float."""
+    a_bits = struct.unpack("I", struct.pack("f", a))[0]
+    b_bits = struct.unpack("I", struct.pack("f", b))[0]
+    combined = (a_bits << 32) | b_bits
+    return struct.unpack("d", struct.pack("Q", combined))[0]
+
+
+def decompress_floats(c: float) -> tuple[float, float]:
+    """Decompress one 64-bit float back into two 32-bit floats."""
+    combined = struct.unpack("Q", struct.pack("d", c))[0]
+    a_bits = combined >> 32
+    b_bits = combined & 0xFFFFFFFF
+    a = struct.unpack("f", struct.pack("I", a_bits))[0]
+    b = struct.unpack("f", struct.pack("I", b_bits))[0]
+    return a, b
