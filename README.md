@@ -12,6 +12,14 @@ The code for the environment can be found [here](https://github.com/bryanoliveir
 
 An overview of MARL (Multi Agent Reinforcement Learning) research [here](https://github.com/LantaoYu/MARL-Papers).
 
+## How to run?
+**NOTE: Generally it is advised to run each file via a module call so that cross project imports works. E.g. `python -m src.runs.arena`**
+
+The repo is divided into the section `src.agent`, `src.runs` and `src.visualization`. In the first you can find our self implemented versions of algorithms, the second folder then contains runners to train these algorithms. The visualization then continues with our pre-trained models and also the `arena.py` file. In here you can easily select agents to play a match against each other and watch them play.
+
+During the training there will be logs captured. Therefore within the `src.runs` folder there will appear an `out` folder which contains the saved model at the end and also a tensorboard log file next to a plain text log file. To monitor your training execute this in the activated virtual environment: `tensorboard --logdir=src/runs/out/logs/tensorboard`
+
+In the notebooks folder you can find scripts to generate pretty visualized logs. However you do need some logging data first.
 ## Requirements
 
 ### Thema:

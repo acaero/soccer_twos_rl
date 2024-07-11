@@ -7,10 +7,10 @@ from src.env import make_env, ProgressBarManager
 from src.config import N_GAMES, LOG_DIR, CHECKPOINT_DIR
 
 
-RUN_NAME = "ppo_proximity_final_random"
+RUN_NAME = "ppo_speed_final_single"
 
 if __name__ == "__main__":
-    num_cpu = 4
+    num_cpu = 6
     vec_env = SubprocVecEnv(
         [
             make_env(env_id=i + 1, rank=i, tensorboard_name=RUN_NAME)
@@ -35,4 +35,4 @@ if __name__ == "__main__":
 
     with ProgressBarManager(N_GAMES) as progress_callback:
         model.learn(N_GAMES, callback=[progress_callback])
-    model.save(Path(CHECKPOINT_DIR) / "bestmodel_ppo")
+    model.save(Path(CHECKPOINT_DIR) / "ppo_speed_final_single")

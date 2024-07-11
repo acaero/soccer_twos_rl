@@ -32,11 +32,11 @@ class SoccerTwosEnv(gym.Env):
         obs, rewards, dones, info = self.env.step(actions)
 
         # kommentiere die 5 Zeilen aus für ohne BaselineAgent
-        agent = BaselineAgent()
-        actions = {player_id: agent.act(info, player_id) for player_id in range(4)}
-        actions[0] = action
-        self.env.reset()
-        obs, rewards, dones, info = self.env.step(actions)
+        # agent = BaselineAgent()
+        # actions = {player_id: agent.act(info, player_id) for player_id in range(4)}
+        # actions[0] = action
+        # self.env.reset()
+        # obs, rewards, dones, info = self.env.step(actions)
 
         self.iteration += 1
         if self.logger is not None:

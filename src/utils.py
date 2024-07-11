@@ -8,38 +8,26 @@ import soccer_twos
 
 
 def shape_rewards(info, player_id):
-    if not REWARD_SHAPING:
-        return 0
-
     extra_reward = 0
 
+    # Reward a short distance to the ball
     player_pos = np.array(info[player_id]["player_info"]["position"])
     ball_pos = np.array(info[player_id]["ball_info"]["position"])
     distance = np.linalg.norm(player_pos - ball_pos)
-    # Normalize the distance
+
     normalized_distance = 1 - distance / 16.5
-    # print("distance: ", distance)
-
-    # Calculate the proximity reward using an exponential function
     proximity_reward = normalized_distance / 20
-    # print("reward: ", normalized_distance)
-    # Add this to your existing reward
+
+    # Reward a high velocity
+    velocity_ball = math.sqrt(
+        info[player_id]["ball_info"]["velocity"][0] ** 2
+        + info[player_id]["ball_info"]["velocity"][1] ** 2
+    )
+    velocity_ball_reward = velocity_ball / 150
+
+    # Add rewards
     extra_reward += proximity_reward
-
-    # Calculate the angle reward based on the angle between the player's forward vector and the direction to the ball
-    # direction_to_target = ball_pos - player_pos
-    # distance_to_target = np.linalg.norm(direction_to_target)
-    # direction_to_target /= distance_to_target
-    # player_rotation_y = info[player_id]["player_info"]["rotation_y"]
-    # player_forward_vector = vector_from_angle_custom(player_rotation_y)
-    # angle_to_target = calculate_angle_between_vectors(
-    #     player_forward_vector, direction_to_target
-    # )
-
-    # angle_reward = np.exp(-3 * angle_to_target / 180) / 6
-
-    # Add this to your existing reward
-    # extra_reward += angle_reward
+    extra_reward += velocity_ball_reward
 
     return extra_reward
 

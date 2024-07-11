@@ -1,0 +1,43 @@
+\begin{thebibliography}{8}
+
+\bibitem{juliani2020}
+A.~Juliani, V.P. Berges, E.~Teng, A.~Cohen, J.~Harper, C.~Elion, C.~Goy,
+  Y.~Gao, H.~Henry, M.~Mattar et~al., arXiv preprint arXiv:1809.02627  (2020)
+
+\bibitem{soccertwos}
+B.~Oliveira, \emph{A pre-compiled soccer-twos reinforcement learning
+  environment with multi-agent gym-compatible wrappers and human-friendly
+  visualizers.}, \url{https://github.com/bryanoliveira/soccer-twos-env} (2021)
+
+\bibitem{10.1007/11691839_1}
+P.J.t. Hoen, K.~Tuyls, L.~Panait, S.~Luke, J.A. La~Poutr{\'e}, \emph{An
+  Overview of Cooperative and Competitive Multiagent Learning}, in
+  \emph{Learning and Adaption in Multi-Agent Systems}, edited by K.~Tuyls, P.J.
+  Hoen, K.~Verbeeck, S.~Sen (Springer Berlin Heidelberg, Berlin, Heidelberg,
+  2006), pp. 1--46, ISBN 978-3-540-33059-2
+
+\bibitem{Tan:1993}
+M.~Tan, \emph{Multi-Agent Reinforcement Learning: Independent versus
+  Cooperative Agents}, in \emph{Proceedings of the Tenth International
+  Conference on Machine Learning (ICML 1993)} (Morgan Kauffman, San Francisco,
+  CA, USA, 1993), pp. 330--337, ISBN 1-55860-307-7,
+  \urlstyle{tt}\url{http://web.media.mit.edu/~cynthiab/Readings/tan-MAS-reinfLearn.pdf}
+
+\bibitem{mnih2013}
+V.~Mnih, K.~Kavukcuoglu, D.~Silver, A.~Graves, I.~Antonoglou, D.~Wierstra,
+  M.~Riedmiller, \emph{Playing atari with deep reinforcement learning} (2013),
+  \texttt{1312.5602}, \urlstyle{tt}\url{https://arxiv.org/abs/1312.5602}
+
+\bibitem{SchulmanWDRK17}
+J.~Schulman, F.~Wolski, P.~Dhariwal, A.~Radford, O.~Klimov, CoRR
+  \textbf{abs/1707.06347} (2017), \texttt{1707.06347}
+
+\bibitem{MnihBMGLHSK16}
+V.~Mnih, A.P. Badia, M.~Mirza, A.~Graves, T.P. Lillicrap, T.~Harley, D.~Silver,
+  K.~Kavukcuoglu, CoRR \textbf{abs/1602.01783} (2016), \texttt{1602.01783}
+
+\bibitem{stable-baselines3}
+A.~Raffin, A.~Hill, A.~Gleave, A.~Kanervisto, M.~Ernestus, N.~Dormann, Journal
+  of Machine Learning Research \textbf{22}, 1 (2021)
+
+\end{thebibliography}
