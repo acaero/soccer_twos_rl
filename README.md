@@ -22,6 +22,8 @@ During the training there will be logs captured. Therefore within the `src.runs`
 In the notebooks folder you can find scripts to generate pretty visualized logs. However you do need some logging data first.
 ## Requirements
 
+Report can be found here: https://www.overleaf.com/project/668ef017fff2adf726f35f9e
+
 ### Thema:
 
 - Beliebiges Reinforcement-Problem (Brettspiel, Kartenspiel, Computerspiel,
